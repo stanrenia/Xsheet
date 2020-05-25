@@ -1,7 +1,9 @@
-﻿namespace Xsheet
+﻿using System.IO;
+
+namespace Xsheet
 {
     public interface IMatrixRenderer
     {
-        T GenerateExcelWorksheet<T>(Matrix mat);
+        void GenerateExcelFile(Matrix mat, Stream stream);
     }
 }
