@@ -143,5 +143,57 @@ namespace Xsheet.Tests
             // THEN
             Check.That(colDef).IsEqualTo(expectedColDef);
         }
+
+        public class TestDataRowDefinition1 : IEnumerable<object[]>
+        {
+            public IEnumerator<object[]> GetEnumerator()
+            {
+                var dataList = GetData();
+                foreach (var data in dataList)
+                {
+                    yield return new object[] {
+                        dataList,
+                        data
+                    };
+                }
+
+                // Should return the Default RowDefinition when the specified key don't match any key
+                yield return new object[]
+                {
+                    dataList,
+                    new RowDefinition { Key = RowDefinition.DEFAULT_KEY }
+                };
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            private static List<RowDefinition> GetData()
+            {
+                return new List<RowDefinition>
+                {
+                    new RowDefinition { Key = "RowA" },
+                    new RowDefinition { Key = "RowB" },
+                };
+            }
+        }
+
+        [Theory]
+        [ClassData(typeof(TestDataRowDefinition1))]
+        public void Should_Return_Row_Definition_By_Key(List<RowDefinition> rows, RowDefinition expectedRowDef)
+        {
+            var mat = Matrix.With()
+                .ColsCount(2)
+                .Rows(rows)
+                .Build();
+
+            // WHEN
+            RowDefinition rowDef = mat.GetRowByKey(expectedRowDef.Key);
+
+            // THEN
+            Check.That(rowDef.Key).IsEqualTo(expectedRowDef.Key);
+        }
     }
 }

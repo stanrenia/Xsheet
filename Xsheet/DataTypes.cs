@@ -2,6 +2,7 @@
 {
     public enum DataTypes
     {
-        Text
+        Text,
+        Number
     }
 }

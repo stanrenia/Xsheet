@@ -9,6 +9,8 @@ namespace Xsheet
     {
         private IEnumerable<ColumnDefinition> _columnsDefinitions = new List<ColumnDefinition>();
         private Dictionary<string, ColumnDefinition> _columnsDefinitionsByKey = new Dictionary<string, ColumnDefinition>();
+        private IEnumerable<RowDefinition> _rowsDefinitions = new List<RowDefinition>();
+        private Dictionary<string, RowDefinition> _rowsDefinitionsByKey = new Dictionary<string, RowDefinition>();
 
         public int CountOfColumns { get; internal set; }
         public int CountOfRows { get; internal set; }
@@ -37,7 +39,20 @@ namespace Xsheet
             }
         }
 
-        public IEnumerable<RowDefinition> RowsDefinitions { get; internal set; } = new List<RowDefinition>();
+        public IEnumerable<RowDefinition> RowsDefinitions 
+        {
+            get => _rowsDefinitions;
+            internal set
+            {
+                if (value != null)
+                {
+                    _rowsDefinitions = value;
+                    _rowsDefinitionsByKey = _rowsDefinitions
+                        .ToDictionary(row => row.Key, row => row);
+                }
+            }
+        }
+
         public IEnumerable<RowValue> RowValues { get; internal set; } = new List<RowValue>();
         public IEnumerable<MatrixCellValue> Values { get; internal set; } = new List<MatrixCellValue>();
 
@@ -60,6 +75,19 @@ namespace Xsheet
         public ColumnDefinition GetColumnByKey(string key)
         {
             return _columnsDefinitionsByKey[key];
+        }
+
+        public RowDefinition GetRowByKey(string aKey)
+        {
+            var key = aKey is null ? RowDefinition.DEFAULT_KEY : aKey;
+            _rowsDefinitionsByKey.TryGetValue(key, out RowDefinition row);
+
+            return row is null ? GetDefaultRowDefinition() : row;
+        }
+
+        private RowDefinition GetDefaultRowDefinition()
+        {
+            return new RowDefinition { Key = RowDefinition.DEFAULT_KEY };
         }
 
         public class MatrixBuilder
