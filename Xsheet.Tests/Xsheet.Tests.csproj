@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XSheetRenderers\XSheetRenderers.csproj" />
+    <ProjectReference Include="..\XSheetRenderers\XSheet.Renderers.csproj" />
   </ItemGroup>
 
 </Project>
