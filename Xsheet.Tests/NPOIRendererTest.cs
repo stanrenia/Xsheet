@@ -19,6 +19,7 @@ namespace Xsheet.Tests
         private readonly IMatrixRenderer _renderer;
         private readonly List<Stream> _fileStreamToClose;
         private const string FILE_DEBUG = "debug.xlsx";
+        private const string FILE_DEBUG2 = "debug2.xlsx";
         private const string FILE_TEST_1 = "test1.xlsx";
         private const string FILE_TEST_FORMAT_BASIC = "test_format_basic.xlsx";
         private const string FILE_TEST_FORMAT_NPOI = "test_format_npoi.xlsx";
@@ -373,6 +374,43 @@ namespace Xsheet.Tests
             Check.That(ReadAllCells(readWb, 0).Skip(cols.Count)).ContainsOnlyElementsThatMatch(cell => cell.CellStyle.GetFont(readWb).FontHeightInPoints == 12);
         }
 
+        [Fact]
+        public void Should_Help_To_Debug_NPOIFormat()
+        {
+            var wb = new XSSFWorkbook();
+
+            var s1 = wb.CreateCellStyle();
+            s1.FillForegroundColor = IndexedColors.LightBlue.Index;
+            var f1 = wb.CreateFont();
+            f1.Color = IndexedColors.Black.Index;
+            f1.FontHeightInPoints = 14;
+            f1.IsBold = true;
+            s1.SetFont(f1);
+
+            var s2 = wb.CreateCellStyle();
+            var f2 = wb.CreateFont();
+            s2.CloneStyleFrom(s1);
+            s2.FillForegroundColor = IndexedColors.LightOrange.Index;
+            f2.CloneStyleFrom(f1);
+            f2.IsItalic = true;
+            f2.Color = IndexedColors.Green.Index;
+            s2.SetFont(f2);
+
+            // FIXME f1.Color = f2.Color!!
+            Check.That(f1.Color).IsNotEqualTo(f2.Color);
+            
+            var sheet = wb.CreateSheet();
+            var row0 = sheet.CreateRow(0);
+            var cell0 = row0.CreateCell(0);
+            cell0.CellStyle = s1;
+            cell0.SetCellValue("FIRST");
+            var cell1 = row0.CreateCell(1);
+            cell1.CellStyle = s2;
+            cell1.SetCellValue("SECOND");
+
+            WriteDebugFileAndClose(wb, FILE_DEBUG2);
+        }
+
         private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)
         {
             var readSheet = readWb.GetSheetAt(sheetIndex);
@@ -401,6 +439,14 @@ namespace Xsheet.Tests
             var fs = File.Create(fileName);
             _fileStreamToClose.Add(fs);
             rd.GenerateExcelFile(mat, fs);
+        }
+
+        private void WriteDebugFileAndClose(IWorkbook wb, string filename)
+        {
+            var fs = File.Create(filename);
+            wb.Write(fs);
+            fs.Close();
+            wb.Close();
         }
     }
 }
