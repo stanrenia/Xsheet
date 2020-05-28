@@ -62,14 +62,18 @@ namespace Xsheet
 
         public static MatrixBuilder With() => new MatrixBuilder();
 
-        public Matrix ConcatX(Matrix mat)
+        public Matrix ConcatX(Matrix aMat)
         {
-            throw new NotImplementedException();
+            return Matrix.With()
+                .Dimensions(Math.Max(this.CountOfRows, aMat.CountOfRows), this.CountOfColumns + aMat.CountOfColumns)
+                .Build();
         }
 
-        public Matrix ConcatY(Matrix mat)
+        public Matrix ConcatY(Matrix aMat)
         {
-            throw new NotImplementedException();
+            return Matrix.With()
+                .Dimensions(Math.Max(this.CountOfColumns, aMat.CountOfColumns), this.CountOfRows + aMat.CountOfRows)
+                .Build();
         }
 
         public ColumnDefinition GetColumnByKey(string key)
