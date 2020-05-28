@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Xsheet;
 
-namespace Xsheet
+namespace XSheet.Renderers.Formats
 {
-    public class Format
+    public class BasicFormat : Format
     {
         public string FontStyle { get; set; }
         public string BackgroundColor { get; set; }
         public int? FontSize { get; set; }
 
-        public static Format MergeFormats(List<Format> formats)
+        public static BasicFormat MergeFormats(List<BasicFormat> formats)
         {
-            return formats.Aggregate(new Format(), (mergedFormat, nextFormat) =>
+            return formats.Aggregate(new BasicFormat(), (mergedFormat, nextFormat) =>
             {
                 if (nextFormat.FontSize.HasValue)
                 {
