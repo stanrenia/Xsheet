@@ -43,7 +43,7 @@ namespace Xsheet.Tests
             // GIVEN
             var cols = new List<ColumnDefinition>
             {
-                new ColumnDefinition { Key = "ColA" }
+                new ColumnDefinition { Name = "ColA" }
             };
 
             // WHEN
@@ -70,6 +70,7 @@ namespace Xsheet.Tests
             // WHEN
             var mat = Matrix.With()
                 .ColsCount(10)
+                .RowsCount(1)
                 .Rows(rows)
                 .Build();
 
@@ -85,7 +86,7 @@ namespace Xsheet.Tests
             // GIVEN
             var values = new List<RowValue>
             {
-                new RowValue { ValuesByCol = new Dictionary<string, object>{ { "colA", 123 }, { "colB", 234 } } }
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 123 }, { "colB", 234 } } }
             };
 
             // WHEN
@@ -122,8 +123,8 @@ namespace Xsheet.Tests
             {
                 return new List<ColumnDefinition>
                 {
-                    new ColumnDefinition { Key = "ColA" },
-                    new ColumnDefinition { Key = "ColB" },
+                    new ColumnDefinition { Name = "ColA" },
+                    new ColumnDefinition { Name = "ColB" },
                 };
             }
         }
@@ -138,7 +139,7 @@ namespace Xsheet.Tests
                 .Build();
 
             // WHEN
-            ColumnDefinition colDef = mat.GetColumnByKey(expectedColDef.Key);
+            ColumnDefinition colDef = mat.GetOwnColumnByIndex(expectedColDef.Index);
 
             // THEN
             Check.That(colDef).IsEqualTo(expectedColDef);
@@ -186,6 +187,7 @@ namespace Xsheet.Tests
         {
             var mat = Matrix.With()
                 .ColsCount(2)
+                .RowsCount(1)
                 .Rows(rows)
                 .Build();
 

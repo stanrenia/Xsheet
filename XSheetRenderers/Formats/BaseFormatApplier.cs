@@ -17,7 +17,7 @@ namespace XSheet.Renderers.Formats
         /// 4) Add each Col format of current row
         /// Override MergeFormats() to change the default behavior, which is only taking the 4th format (the last one)
         /// </summary>
-        public void ApplyFormatToCell(IWorkbook wb, RowDefinition defaultRowDef, RowDefinition rowDef, string columnKey, ICell cell)
+        public void ApplyFormatToCell(IWorkbook wb, RowDefinition defaultRowDef, RowDefinition rowDef, int columnIndex, ICell cell)
         {
             var formats = new List<T>();
             void AddFormatIfNotNull(Format f)
@@ -29,10 +29,10 @@ namespace XSheet.Renderers.Formats
             }
 
             AddFormatIfNotNull(defaultRowDef.DefaultCellFormat);
-            defaultRowDef.FormatsByCol.TryGetValue(columnKey, out Format defaultColFormat);
+            defaultRowDef.FormatsByColIndex.TryGetValue(columnIndex, out Format defaultColFormat);
             AddFormatIfNotNull(defaultColFormat);
             AddFormatIfNotNull(rowDef.DefaultCellFormat);
-            rowDef.FormatsByCol.TryGetValue(columnKey, out Format colFormat);
+            rowDef.FormatsByColIndex.TryGetValue(columnIndex, out Format colFormat);
             AddFormatIfNotNull(colFormat);
 
             var mergedFormat = MergeFormats(formats);

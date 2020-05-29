@@ -73,7 +73,7 @@ namespace Xsheet.Tests
 
             var values = new List<RowValue> {
                 new RowValue {
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { "Lastname", "Doe" },
                         { "Firstname", "John" }
                     }
@@ -106,8 +106,8 @@ namespace Xsheet.Tests
             Check.That(headerRow.Cells[1].StringCellValue).IsEqualTo(cols[1].Label);
 
             var firstValueRow = readSheet.GetRow(1);
-            Check.That(firstValueRow.Cells[0].StringCellValue).IsEqualTo(values[0].ValuesByCol["Lastname"]);
-            Check.That(firstValueRow.Cells[1].StringCellValue).IsEqualTo(values[0].ValuesByCol["Firstname"]);
+            Check.That(firstValueRow.Cells[0].StringCellValue).IsEqualTo(values[0].ValuesByColName["Lastname"]);
+            Check.That(firstValueRow.Cells[1].StringCellValue).IsEqualTo(values[0].ValuesByColName["Firstname"]);
         }
 
         [Fact]
@@ -133,14 +133,14 @@ namespace Xsheet.Tests
             {
                 new RowDefinition { 
                     DefaultCellFormat = new BasicFormat { FontSize = 12 }, 
-                    FormatsByCol = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, Format> {
                         { Lastname, new BasicFormat { FontStyle = FontStyle.Bold } },
                         { Age, new BasicFormat { BackgroundColor = ColorLightGreyIndex.ToString() } }
                     }
                 },
                 new RowDefinition { 
                     Key = Odd, 
-                    FormatsByCol = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, Format> {
                         { Age, new BasicFormat { BackgroundColor = ColorBlueIndex.ToString() } }
                     } 
                 },
@@ -149,7 +149,7 @@ namespace Xsheet.Tests
             var values = new List<RowValue> {
                 new RowValue {
                     Key = Even,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Doe" },
                         { Firstname, "John" },
                         { Age, 30 }
@@ -157,7 +157,7 @@ namespace Xsheet.Tests
                 },
                 new RowValue {
                     Key = Odd,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Clinton" },
                         { Firstname, "Bob" },
                         { Age, 41 }
@@ -165,7 +165,7 @@ namespace Xsheet.Tests
                 },
                 new RowValue {
                     Key = Even,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Doa" },
                         { Firstname, "Johana" },
                         { Age, 36 }
@@ -294,14 +294,14 @@ namespace Xsheet.Tests
             {
                 new RowDefinition {
                     DefaultCellFormat = new NPOIFormat { CellStyle = style2 },
-                    FormatsByCol = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, Format> {
                         { Lastname, new NPOIFormat { CellStyle = style3 } },
                         { Age, new NPOIFormat { CellStyle = style4 } }
                     }
                 },
                 new RowDefinition {
                     Key = Odd,
-                    FormatsByCol = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, Format> {
                         { Age, new NPOIFormat { CellStyle = style5 } }
                     }
                 },
@@ -310,7 +310,7 @@ namespace Xsheet.Tests
             var values = new List<RowValue> {
                 new RowValue {
                     Key = Even,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Doe" },
                         { Firstname, "John" },
                         { Age, 30 }
@@ -318,7 +318,7 @@ namespace Xsheet.Tests
                 },
                 new RowValue {
                     Key = Odd,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Clinton" },
                         { Firstname, "Bob" },
                         { Age, 41 }
@@ -326,7 +326,7 @@ namespace Xsheet.Tests
                 },
                 new RowValue {
                     Key = Even,
-                    ValuesByCol = new Dictionary<string, object> {
+                    ValuesByColName = new Dictionary<string, object> {
                         { Lastname, "Doa" },
                         { Firstname, "Johana" },
                         { Age, 36 }
