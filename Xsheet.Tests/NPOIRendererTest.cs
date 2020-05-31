@@ -24,6 +24,7 @@ namespace Xsheet.Tests
         private const string FILE_TEST_FORMAT_BASIC = "test_format_basic";
         private const string FILE_TEST_FORMAT_NPOI = "test_format_npoi";
         private const string FILE_TEST_CONCATX = "test_concatX";
+        private const string FILE_TEST_LOOKUP_1 = "test_lookup1";
 
         public NPOIRendererTest()
         {
@@ -527,6 +528,100 @@ namespace Xsheet.Tests
             var row2 = readSheet.GetRow(2);
             Check.That(row2.Cells.Extracting(nameof(ICell.StringCellValue))).ContainsExactly("Baudelaire", "Charles", "Hugo", "Victor");
             Check.That(row2.Cells.Select(c => c.CellStyle.GetFont(readWb).IsBold)).IsOnlyMadeOf(true);
+        }
+
+        [Fact]
+        public void Should_Render_Matrix_With_Cells_Lookup_On_A_Single_Matrix()
+        {
+            // GIVEN
+            var finalTotalStyle = _workbook.CreateCellStyle();
+            finalTotalStyle.FillPattern = FillPattern.SolidForeground;
+            finalTotalStyle.FillForegroundColor = IndexedColors.LightOrange.Index;
+
+            const string Playername = "Playername";
+            const string Score1 = "Score1";
+            const string Score2 = "Score2";
+            const string Score3 = "Score3";
+            const string Total = "Total";
+            const string Mean = "Mean";
+            const string FinalTotal = "FinalTotal";
+            var m1 = Matrix.With().Key(index: 1)
+                .Cols(new List<ColumnDefinition> {
+                    new ColumnDefinition { Name = Playername, Label = "Player name" },
+                    new ColumnDefinition { Name = Score1, Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = Score2, Label = "Score 2", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = Score3, Label = "Score 3", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = Total, Label = "Total", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = Mean, Label = "Mean", DataType = DataTypes.Number },
+                })
+                .Rows(new List<RowDefinition> {
+                    new RowDefinition {
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>> {
+                            { Total, (mat, cell) => {
+                                var row = mat.Row(cell);
+                                return row.Col(Score1).Value + row.Col(Score2).Value + row.Col(Score3).Value;
+                            }},
+                            { Mean, (mat, cell) => {
+                                var row = mat.Row(cell);
+                                return $"=MEAN({row.Col(Score1).Value};{row.Col(Score2).Value};{row.Col(Score2).Value})";
+                            } },
+                        }
+                    },
+                    new RowDefinition { 
+                        Key = FinalTotal, 
+                        DefaultCellFormat = new NPOIFormat { CellStyle = finalTotalStyle },
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { Score1, (mat, cell) => mat.Col(cell).Values.Sum() },
+                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[1].Address}:{mat.Row(cell).Col(Score2).Address})" },
+                            { Score3, (mat, cell) => {
+                                var cells = mat.Col(cell).Cells.SKip(1);
+                                var formula = string.Join('+', cells);
+                                return $"={formula}";
+                            }},
+                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[1].Address}:{mat.Row(cell.RowIndex - 1).Col(Total).Address})" },
+                            { Mean, (mat, cell) => $"=MEAN({mat.Col(cell).Cells[1].Address}:{mat.Row(cell.RowIndex - 1).Col(Mean).Address})" },
+                        }
+                    },
+                })
+                .RowValues(new List<RowValue>
+                {
+                    new RowValue { ValuesByColName = new Dictionary<string, object> {
+                        { Playername, "Mario" }, { Score1, 10 }, { Score2, 20 }, { Score3, 30 }
+                    } },
+                    new RowValue { ValuesByColName = new Dictionary<string, object> {
+                        { Playername, "Luigi" }, { Score1, 12 }, { Score2, 23 }, { Score3, 34 }
+                    } },
+                    new RowValue { Key = FinalTotal }
+                })
+                .Build();
+
+            var ms = new MemoryStream();
+
+            // WHEN
+            _renderer.GenerateExcelFile(m1, ms);
+            ms.Close();
+
+            WriteDebugFile(_defaultFormatApplier, m1, FILE_TEST_LOOKUP_1, _workbook);
+
+            // THEN
+            var fileBytes = ms.ToArray();
+            Check.That(fileBytes).Not.IsEmpty();
+
+            var readWb = new XSSFWorkbook(new MemoryStream(fileBytes));
+            var readSheet = readWb.GetSheetAt(0);
+            
+            var row1 = readSheet.GetRow(1);
+            Check.That(row1.Cells[0].StringCellValue).IsEqualTo("Mario");
+            Check.That(row1.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(10, 20, 30, 60, 20);
+
+            var row2 = readSheet.GetRow(2);
+            Check.That(row2.Cells[0].StringCellValue).IsEqualTo("Luigi");
+            Check.That(row2.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(12, 23, 34, 69, 23);
+            
+            var row3 = readSheet.GetRow(3);
+            Check.That(row3.Cells[0].StringCellValue).IsEqualTo("Total");
+            Check.That(row3.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(22, 43, 64, 129, 21.5);
         }
 
         private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)

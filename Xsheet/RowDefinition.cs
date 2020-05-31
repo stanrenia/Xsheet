@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Xsheet
 {
@@ -10,5 +11,6 @@ namespace Xsheet
         public Format DefaultCellFormat { get; set; }
         public Dictionary<string, Format> FormatsByColName { internal get; set; } = new Dictionary<string, Format>();
         public Dictionary<int, Format> FormatsByColIndex { get; internal set; } = new Dictionary<int, Format>();
+        public Dictionary<string, Func<Matrix, MatrixCellValue, object>> ValuesMapping { get; set; } = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>();
     }
 }
