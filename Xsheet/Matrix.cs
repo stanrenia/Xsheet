@@ -58,7 +58,7 @@ namespace Xsheet
 
                     // Build the formats by column index Dictionnary if not built
                     // Then it is altered only during concatenation
-                    foreach(var rowDef in _rowsDefinitions
+                    foreach (var rowDef in _rowsDefinitions
                         .Where(rowDef => rowDef.FormatsByColIndex.Count == 0 && rowDef.FormatsByColName.Count > 0))
                     {
                         rowDef.FormatsByColIndex = rowDef.FormatsByColName.ToDictionary(kv => GetOwnColumnIndex(kv.Key), kv => kv.Value);
@@ -72,9 +72,11 @@ namespace Xsheet
             return _columnsDefinitions.Where(colDef => colDef.Name == colName).First().Index;
         }
 
-        public IEnumerable<RowValue> RowValues { 
-            get => _rowValues; 
-            internal set { 
+        public IEnumerable<RowValue> RowValues
+        {
+            get => _rowValues;
+            internal set
+            {
                 if (value != null)
                 {
                     if (_columnsDefinitions.Count() == 0 && value.Count() > 0)
@@ -94,7 +96,7 @@ namespace Xsheet
                         rowValue.ValuesByColIndex = rowValue.ValuesByColName.ToDictionary(kv => GetOwnColumnIndex(kv.Key), kv => kv.Value);
                     }
                 }
-            } 
+            }
         }
 
         public IEnumerable<MatrixCellValue> Values { get; internal set; } = new List<MatrixCellValue>();
@@ -105,7 +107,10 @@ namespace Xsheet
 
         public static MatrixBuilder With() => new MatrixBuilder();
 
-        public Matrix ConcatX(Matrix aMat)
+        // TODO What to do if rows defs contains same Key ?
+        // -- May allow to define the behaviour like: 
+        // -- Keep left/right, merge, raiseError
+        public Matrix ConcatX(Matrix aMat, MatrixConcatStrategy rowsStrategy = MatrixConcatStrategy.KeepLeft)
         {
             if (Key.Equals(aMat.Key))
             {
@@ -113,39 +118,10 @@ namespace Xsheet
             }
 
             var leftColsCount = ColumnsDefinitions.Count();
-            var cols = ColumnsDefinitions.Concat(aMat.ColumnsDefinitions.Select(col =>
-                {
-                    col.Index += leftColsCount;
-                    return col;
-                })).ToList();
 
-            // TODO What to do if rows defs contains same Key ?
-            // -- May allow to define the behaviour
-            var rows = RowsDefinitions.Concat(aMat.RowsDefinitions.Select(row =>
-            {
-                row.FormatsByColIndex = row.FormatsByColIndex
-                    .ToDictionary(kv => kv.Key + leftColsCount, kv => kv.Value);
-                return row;
-            })).ToList();
-
-            var values = this.RowValues.Select((leftValue, i) =>
-            {
-                var rightValue = aMat.RowValues.ElementAtOrDefault(i);
-                if (rightValue != null)
-                {
-                    leftValue.ValuesByColIndex = rightValue.ValuesByColIndex
-                        .ToDictionary(kv => kv.Key + leftColsCount, kv => kv.Value)
-                        .Concat(leftValue.ValuesByColIndex)
-                        .ToDictionary(kv => kv.Key, kv => kv.Value);
-                }
-
-                return leftValue;
-            });
-
-            if (this.CountOfRows < aMat.CountOfRows)
-            {
-                values = values.Concat(aMat.RowValues.Skip(this.CountOfRows));
-            }
+            List<ColumnDefinition> cols = ConcatXColumnsDefinitions(aMat, leftColsCount);
+            List<RowDefinition> rows = ConcatXRowsDefinitions(aMat, rowsStrategy, leftColsCount);
+            List<RowValue> values = ConcatXRowValues(aMat, leftColsCount);
 
             var builder = Matrix.With()
                 .Dimensions(Math.Max(this.CountOfRows, aMat.CountOfRows), this.CountOfColumns + aMat.CountOfColumns);
@@ -160,10 +136,97 @@ namespace Xsheet
             }
             if (values.Count() > 0)
             {
-                builder.RowValues(values.ToList());
+                builder.RowValues(values);
             }
 
             return builder.Build();
+        }
+
+        private List<ColumnDefinition> ConcatXColumnsDefinitions(Matrix rightMat, int leftColsCount)
+        {
+            return ColumnsDefinitions.Concat(rightMat.ColumnsDefinitions.Select(col =>
+            {
+                col.Index += leftColsCount;
+                return col;
+            })).ToList();
+        }
+
+        private List<RowDefinition> ConcatXRowsDefinitions(Matrix rightMat, MatrixConcatStrategy rowsStrategy, int leftColsCount)
+        {
+            var rows = new List<RowDefinition>();
+
+            if (rowsStrategy == MatrixConcatStrategy.RaiseError
+                && RowsDefinitions.Any(r => rightMat.RowsDefinitions.Any(r2 => r2.Key == r.Key)))
+            {
+                throw new InvalidOperationException($@"Cannot ConcatX using strategy {nameof(MatrixConcatStrategy.RaiseError)}:
+                Some RowDefinitions have the same Key.");
+            }
+            else if (rowsStrategy == MatrixConcatStrategy.KeepRight)
+            {
+                throw new NotImplementedException("KeepRight is not supported yet");
+            }
+            else if (rowsStrategy == MatrixConcatStrategy.Merge)
+            {
+                throw new NotImplementedException("Merge is not supported yet");
+            }
+
+            var rightMatRowDefs = rightMat.RowsDefinitions.Select(row =>
+            {
+                row.FormatsByColIndex = row.FormatsByColIndex
+                    .ToDictionary(kv => kv.Key + leftColsCount, kv => kv.Value);
+                return row;
+            });
+
+            if (rowsStrategy == MatrixConcatStrategy.KeepLeft)
+            {
+                var rowDefstoAdd = new List<RowDefinition>();
+                foreach (var rightRowDef in rightMatRowDefs)
+                {
+                    var leftRowDef = RowsDefinitions.FirstOrDefault(r => r.Key == rightRowDef.Key);
+                    if (leftRowDef is null)
+                    {
+                        rowDefstoAdd.Add(rightRowDef);
+                    }
+                    else
+                    {
+                        if (this.CountOfColumns < rightMat.CountOfColumns)
+                        {
+                            foreach (var kv in rightRowDef.FormatsByColIndex.Where(kv => kv.Key > this.CountOfColumns - 1))
+                            {
+                                leftRowDef.FormatsByColIndex.Add(kv.Key, kv.Value);
+                            }
+                        }
+                    }
+                }
+
+                rows = RowsDefinitions.Concat(rowDefstoAdd).ToList();
+            }
+
+            return rows;
+        }
+
+        private List<RowValue> ConcatXRowValues(Matrix rightMat, int leftColsCount)
+        {
+            var values = this.RowValues.Select((leftValue, i) =>
+            {
+                var rightValue = rightMat.RowValues.ElementAtOrDefault(i);
+                if (rightValue != null)
+                {
+                    leftValue.ValuesByColIndex = rightValue.ValuesByColIndex
+                        .ToDictionary(kv => kv.Key + leftColsCount, kv => kv.Value)
+                        .Concat(leftValue.ValuesByColIndex)
+                        .ToDictionary(kv => kv.Key, kv => kv.Value);
+                }
+
+                return leftValue;
+            });
+
+            if (this.CountOfRows < rightMat.CountOfRows)
+            {
+                values = values.Concat(rightMat.RowValues.Skip(this.CountOfRows));
+            }
+
+            return values.ToList();
         }
 
         public Matrix ConcatY(Matrix aMat)
