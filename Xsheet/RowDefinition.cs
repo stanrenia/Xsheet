@@ -8,6 +8,7 @@ namespace Xsheet
         public string Key { get; set; } = DEFAULT_KEY;
         public bool IsDefault { get => Key == DEFAULT_KEY; }
         public Format DefaultCellFormat { get; set; }
-        public Dictionary<string, Format> FormatsByCol { get; set; } = new Dictionary<string, Format>();
+        public Dictionary<string, Format> FormatsByColName { internal get; set; } = new Dictionary<string, Format>();
+        public Dictionary<int, Format> FormatsByColIndex { get; internal set; } = new Dictionary<int, Format>();
     }
 }

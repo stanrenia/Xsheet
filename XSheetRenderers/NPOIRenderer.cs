@@ -1,6 +1,5 @@
 ﻿using NPOI.SS.UserModel;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Xsheet;
@@ -58,28 +57,28 @@ namespace XSheet.Renderers
             {
                 var rowDef = mat.GetRowByKey(rowValue.Key);
                 var row = sheet.CreateRow(rowNum++);
-                foreach (var keyValue in rowValue.ValuesByCol)
+                foreach (var colDef in mat.ColumnsDefinitions.OrderBy(c => c.Index))
                 {
-                    var colDef = mat.GetColumnByKey(keyValue.Key);
+                    var keyValue = rowValue.ValuesByColIndex[colDef.Index];
                     var cell = row.CreateCell(colDef.Index);
-                    _formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, keyValue.Key, cell);
+                    _formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, cell);
                     SetCellValue(keyValue, colDef, cell);
                 }
             }
         }
 
-        private static void SetCellValue(KeyValuePair<string, object> keyValue, ColumnDefinition col, ICell cell)
+        private static void SetCellValue(object value, ColumnDefinition col, ICell cell)
         {
             switch (col.DataType)
             {
                 case DataTypes.Number:
-                    cell.SetCellValue(Convert.ToDouble(keyValue.Value));
+                    cell.SetCellValue(Convert.ToDouble(value));
                     break;
                 case DataTypes.Text:
-                    cell.SetCellValue(Convert.ToString(keyValue.Value));
+                    cell.SetCellValue(Convert.ToString(value));
                     break;
                 default:
-                    cell.SetCellValue(Convert.ToString(keyValue.Value));
+                    cell.SetCellValue(Convert.ToString(value));
                     break;
             }
         }

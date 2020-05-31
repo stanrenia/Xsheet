@@ -9,14 +9,14 @@
             get => _label;
             set {
                 _label = value;
-                if (Key is null)
+                if (Name is null)
                 {
-                    Key = _label;
+                    Name = _label;
                 }
             }
         }
         public DataTypes DataType { get; set; } = DataTypes.Text;
-        public string Key { get; set; }
+        public string Name { get; set; }
         public int Index { get; internal set; } = UNDEFINED_INDEX_VALUE;
         public Format HeaderCellFormat { get; set; }
     }
