@@ -104,14 +104,8 @@ namespace Xsheet
                     // Build the values by column index Dictionnary if not built
                     // Then it is altered only during concatenation
                     foreach (var rowValue in _rowValues
-                        .Where(rowValue => rowValue.ValuesByColIndex.Count == 0 && rowValue.ValuesByColName.Count > 0))
+                        .Where(rowValue => rowValue.ValuesByColIndex.Count == 0))
                     {
-                        //RowDefinition rowDef = null;
-                        //if (rowValue.Key != null && _rowsDefinitionsByKey.TryGetValue(rowValue.Key, out RowDefinition r))
-                        //{
-                        //    rowDef = r;
-                        //}
-
                         var cells = new List<MatrixCellValue>(CountOfColumns);
                         foreach (int colIndex in Enumerable.Range(0, CountOfColumns))
                         {
@@ -120,7 +114,6 @@ namespace Xsheet
                                 .Select(aKV => new { Value = aKV.Value })
                                 .FirstOrDefault();
 
-                            //var colName = kv?.Key is null ? rowDef?.ValuesMapping.Keys. : kv.Key;
                             var colName = GetOwnColumnByIndex(colIndex).Name;
                             rowValue.ValuesByColIndex.Add(colIndex, cellValue?.Value);
                             cells.Add(new MatrixCellValue(rowIndex, colIndex, colName, cellValue?.Value));

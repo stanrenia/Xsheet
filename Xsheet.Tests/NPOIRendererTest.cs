@@ -574,11 +574,12 @@ namespace Xsheet.Tests
                         DefaultCellFormat = new NPOIFormat { CellStyle = finalTotalStyle },
                         ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
                         {
-                            { Score1, (mat, cell) => mat.Col(cell).Values.Cast<double>().Sum() },
+                            { Playername, (mat, cell) => "TOTAL" },
+                            { Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum() },
                             { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell.RowIndex - 1).Col(Score2).Address})" },
                             { Score3, (mat, cell) => {
-                                var cells = mat.Col(cell).Cells;
-                                var formula = string.Join('+', cells);
+                                var adresses = mat.Col(cell).Cells.SkipLast(1).Select(c => c.Address);
+                                var formula = string.Join('+', adresses);
                                 return $"={formula}";
                             }},
                             { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell.RowIndex - 1).Col(Total).Address})" },
@@ -616,8 +617,12 @@ namespace Xsheet.Tests
             Check.That(row2.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(12, 23, 34, 69, 0);
 
             var row3 = readSheet.GetRow(3);
-            Check.That(row3.Cells[0].StringCellValue).IsEqualTo("Total");
-            Check.That(row3.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(22, 43, 64, 129, 21.5);
+            Check.That(row3.Cells[0].StringCellValue).IsEqualTo("TOTAL");
+            Check.That(row3.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(22, 0, 0, 0, 0);
+            Check.That(row3.Cells[2].CellFormula).IsEqualTo("SUM(C2:C3)");
+            Check.That(row3.Cells[3].CellFormula).IsEqualTo("D2+D3");
+            Check.That(row3.Cells[4].CellFormula).IsEqualTo("SUM(E2:E3)");
+            Check.That(row3.Cells[5].CellFormula).IsEqualTo("AVERAGE(F2:F3)");
         }
 
         private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)
