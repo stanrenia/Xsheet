@@ -77,12 +77,6 @@ namespace Xsheet
             return _columnsDefinitions.Where(colDef => colDef.Name == colName).First().Index;
         }
 
-        // TODO 
-        // - Create cells with RowIndex, ColIndex, Address and Value
-        // - Handle ConcatX, recalulate Cells when ConcatX
-        // - Mat.Row(cell) -> RowValue (or RowValueReader), containing the Cell passed as parameter
-        // - Mat.Row(cell).Col('name') -> Single Cell, deduced using Cell's ColIndex
-        // - Mat.Row(cell).Cols('name') -> Collection of Cells
         public IEnumerable<RowValue> RowValues
         {
             get => _rowValues;
