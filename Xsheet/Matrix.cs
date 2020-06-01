@@ -26,6 +26,11 @@ namespace Xsheet
             {
                 if (value != null)
                 {
+                    if (value.Any(colDef => colDef.Name == null))
+                    {
+                        throw new ArgumentNullException($"{nameof(ColumnDefinition)}.{nameof(ColumnDefinition.Name)} cannot be null");
+                    }
+
                     _columnsDefinitions = value;
 
                     var colsWithIndex = _columnsDefinitions
@@ -88,12 +93,27 @@ namespace Xsheet
                     }
 
                     _rowValues = value;
+
+                    int rowIndex = HasHeaders ? 1 : 0;
                     // Build the values by column index Dictionnary if not built
                     // Then it is altered only during concatenation
                     foreach (var rowValue in _rowValues
-                        .Where(rowValue => rowValue.ValuesByColIndex.Count == 0 && rowValue.ValuesByColName.Count > 0))
+                        .Where(rowValue => rowValue.ValuesByColIndex.Count == 0))
                     {
-                        rowValue.ValuesByColIndex = rowValue.ValuesByColName.ToDictionary(kv => GetOwnColumnIndex(kv.Key), kv => kv.Value);
+                        var cells = new List<MatrixCellValue>(CountOfColumns);
+                        foreach (int colIndex in Enumerable.Range(0, CountOfColumns))
+                        {
+                            var cellValue = rowValue.ValuesByColName
+                                .Where(aKV => GetOwnColumnIndex(aKV.Key) == colIndex)
+                                .Select(aKV => new { Value = aKV.Value })
+                                .FirstOrDefault();
+
+                            var colName = GetOwnColumnByIndex(colIndex).Name;
+                            rowValue.ValuesByColIndex.Add(colIndex, cellValue?.Value);
+                            cells.Add(new MatrixCellValue(rowIndex, colIndex, colName, cellValue?.Value));
+                        }
+                        rowValue.Cells = cells;
+                        rowIndex++;
                     }
                 }
             }
@@ -101,7 +121,8 @@ namespace Xsheet
 
         public IEnumerable<MatrixCellValue> Values { get; internal set; } = new List<MatrixCellValue>();
 
-        public bool HasHeaders { get => ColumnsDefinitions.Count() > 0; }
+        public bool HasHeaders { get => WithHeadersRow && ColumnsDefinitions.Count() > 0; }
+        public bool WithHeadersRow { get; private set; }
 
         private Matrix() { }
 
@@ -205,17 +226,41 @@ namespace Xsheet
             return rows;
         }
 
+        public ColumnCellReader Col(MatrixCellValue cell)
+        {
+            return new ColumnCellReader(RowValues.SelectMany(rv => rv.Cells.Where(c => c.ColIndex == cell.ColIndex)));
+        }
+
+        public RowValue Row(MatrixCellValue cell)
+        {
+            return Row(cell.RowIndex);
+        }
+
+        public RowValue Row(int rowIndex)
+        {
+            return RowValues.ElementAt(rowIndex - (HasHeaders ? 1 : 0));
+        }
+
         private List<RowValue> ConcatXRowValues(Matrix rightMat, int leftColsCount)
         {
-            var values = this.RowValues.Select((leftValue, i) =>
+            var values = this.RowValues.Select((leftValue, rowIndex) =>
             {
-                var rightValue = rightMat.RowValues.ElementAtOrDefault(i);
+                var rightValue = rightMat.RowValues.ElementAtOrDefault(rowIndex);
                 if (rightValue != null)
                 {
                     leftValue.ValuesByColIndex = rightValue.ValuesByColIndex
                         .ToDictionary(kv => kv.Key + leftColsCount, kv => kv.Value)
                         .Concat(leftValue.ValuesByColIndex)
                         .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+                    leftValue.Cells = leftValue.Cells
+                        .Concat(rightValue.Cells.Select(cell => new MatrixCellValue(
+                            rowIndex, 
+                            cell.ColIndex + leftColsCount, 
+                            rightMat.GetOwnColumnByIndex(cell.ColIndex).Name, 
+                            cell.Value
+                        )))
+                        .ToList();
                 }
 
                 return leftValue;
@@ -267,6 +312,7 @@ namespace Xsheet
             private List<ColumnDefinition> ColumnsDefinition;
             private List<RowDefinition> RowsDefinition;
             private List<RowValue> _rowValues;
+            private bool _withHeadersRow = true;
 
             public MatrixBuilder Key(MatrixKey key)
             {
@@ -336,6 +382,7 @@ namespace Xsheet
                 var mat = new Matrix
                 {
                     Key = _key,
+                    WithHeadersRow = _withHeadersRow,
                     CountOfRows = CountOfRows,
                     CountOfColumns = CountOfCols,
                     ColumnsDefinitions = ColumnsDefinition,
@@ -351,6 +398,12 @@ namespace Xsheet
                 }
 
                 return mat;
+            }
+
+            public MatrixBuilder WithoutHeadersRow()
+            {
+                _withHeadersRow = false;
+                return this;
             }
 
             protected class Validator : AbstractValidator<Matrix>

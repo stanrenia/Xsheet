@@ -9,6 +9,7 @@ namespace XSheet.Renderers
 {
     public class NPOIRenderer : IMatrixRenderer
     {
+        private const string CHAR_FORMULA_STARTS = "=";
         private readonly IWorkbook _wb;
         private readonly FormatApplier _formatApplier;
 
@@ -57,28 +58,53 @@ namespace XSheet.Renderers
             {
                 var rowDef = mat.GetRowByKey(rowValue.Key);
                 var row = sheet.CreateRow(rowNum++);
-                foreach (var colDef in mat.ColumnsDefinitions.OrderBy(c => c.Index))
+                foreach (var matrixCell in rowValue.Cells.OrderBy(c => c.ColIndex))
                 {
-                    var keyValue = rowValue.ValuesByColIndex[colDef.Index];
-                    var cell = row.CreateCell(colDef.Index);
-                    _formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, cell);
-                    SetCellValue(keyValue, colDef, cell);
+                    var colDef = mat.GetOwnColumnByIndex(matrixCell.ColIndex);
+                    var npoiCell = row.CreateCell(colDef.Index);
+                    _formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, npoiCell);
+                    SetCellValue(mat, matrixCell, rowDef, colDef, npoiCell);
                 }
             }
         }
 
-        private static void SetCellValue(object value, ColumnDefinition col, ICell cell)
+        private static void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, ICell npoiCell)
         {
-            switch (col.DataType)
+            var value = matrixCell.Value;
+            var dataType = colDef.DataType;
+
+            if (matrixCell.ColName != null && rowDef.ValuesMapping.TryGetValue(matrixCell.ColName, out var func))
+            {
+                var calculatedValue = func.Invoke(mat, matrixCell);
+                if (calculatedValue is string stringValue && stringValue.StartsWith(CHAR_FORMULA_STARTS))
+                {
+                    value = stringValue.Substring(1);
+                    dataType = DataTypes.Formula;
+                }
+                else
+                {
+                    value = calculatedValue;
+                }
+            }
+
+            if (value is null)
+            {
+                return;
+            }
+
+            switch (dataType)
             {
                 case DataTypes.Number:
-                    cell.SetCellValue(Convert.ToDouble(value));
+                    npoiCell.SetCellValue(Convert.ToDouble(value));
                     break;
                 case DataTypes.Text:
-                    cell.SetCellValue(Convert.ToString(value));
+                    npoiCell.SetCellValue(Convert.ToString(value));
+                    break;
+                case DataTypes.Formula:
+                    npoiCell.SetCellFormula(Convert.ToString(value));
                     break;
                 default:
-                    cell.SetCellValue(Convert.ToString(value));
+                    npoiCell.SetCellValue(Convert.ToString(value));
                     break;
             }
         }
