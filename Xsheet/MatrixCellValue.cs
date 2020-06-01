@@ -2,8 +2,9 @@
 {
     public class MatrixCellValue
     {
-        public MatrixCellValue(int rowIndex, int colIndex, string colName, object value)
+        public MatrixCellValue(MatrixKey key, int rowIndex, int colIndex, string colName, object value)
         {
+            MatrixKey = key;
             RowIndex = rowIndex;
             ColIndex = colIndex;
             ColName = colName;
@@ -11,6 +12,7 @@
             Address = $"{CellAddressCalculator.GetColumnLetters(colIndex)}{rowIndex + 1}";
         }
 
+        public MatrixKey MatrixKey { get; }
         public int RowIndex { get; }
         public int ColIndex { get; }
         public string ColName { get; }

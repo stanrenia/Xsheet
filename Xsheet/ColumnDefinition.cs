@@ -4,6 +4,8 @@
     {
         public const int UNDEFINED_INDEX_VALUE = -1;
 
+        public ColumnKey Key { get; internal set; }
+
         private string _label;
         public string Label {
             get => _label;

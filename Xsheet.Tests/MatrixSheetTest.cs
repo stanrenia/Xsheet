@@ -149,11 +149,16 @@ namespace Xsheet.Tests
                 return new { Name = col.Name, DataType = col.DataType, Index = i };
             });
 
+            var keys1 = colDefs.Select(col => new ColumnKey(new MatrixKey("", 1), col.Index, col.Name));
+            var keys2 = colDefs2.Select(col => new ColumnKey(new MatrixKey("", 2), col.Index, col.Name));
+            var expectedKeys = keys1.Concat(keys2).ToList();
+
             Check.That(m3.CountOfRows).Equals(3);
             Check.That(m3.CountOfColumns).Equals(7);
             Check.That(m3.ColumnsDefinitions.Extracting(nameof(ColumnDefinition.Index))).ContainsExactly(expected.Select(e => e.Index));
             Check.That(m3.ColumnsDefinitions.Extracting(nameof(ColumnDefinition.Name))).ContainsExactly(expected.Select(e => e.Name));
             Check.That(m3.ColumnsDefinitions.Extracting(nameof(ColumnDefinition.DataType))).ContainsExactly(expected.Select(e => e.DataType));
+            Check.That(m3.ColumnsDefinitions.Extracting(nameof(ColumnDefinition.Key))).ContainsExactly(expectedKeys);
         }
 
         [Fact]

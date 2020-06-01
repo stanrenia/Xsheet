@@ -40,12 +40,17 @@ namespace Xsheet
                             {
                                 col.Index = i;
                             }
+
+                            if (col.Key.Equals(default(ColumnKey)))
+                            {
+                                col.Key = new ColumnKey(Key, col.Index, col.Name);
+                            }
+
                             return col;
                         });
 
                     _columnsDefinitionsByIndex = colsWithIndex.ToDictionary(col => col.Index);
-
-                    _columnsDefinitionsByKey = colsWithIndex.ToDictionary(col => new ColumnKey(Key, col.Index, col.Name));
+                    _columnsDefinitionsByKey = colsWithIndex.ToDictionary(col => col.Key);
                 }
             }
         }
@@ -110,7 +115,7 @@ namespace Xsheet
 
                             var colName = GetOwnColumnByIndex(colIndex).Name;
                             rowValue.ValuesByColIndex.Add(colIndex, cellValue?.Value);
-                            cells.Add(new MatrixCellValue(rowIndex, colIndex, colName, cellValue?.Value));
+                            cells.Add(new MatrixCellValue(this.Key, rowIndex, colIndex, colName, cellValue?.Value));
                         }
                         rowValue.Cells = cells;
                         rowIndex++;
@@ -165,11 +170,14 @@ namespace Xsheet
 
         private List<ColumnDefinition> ConcatXColumnsDefinitions(Matrix rightMat, int leftColsCount)
         {
-            return ColumnsDefinitions.Concat(rightMat.ColumnsDefinitions.Select(col =>
+            var cols = ColumnsDefinitions.Concat(rightMat.ColumnsDefinitions.Select(col =>
             {
                 col.Index += leftColsCount;
+                col.Key = new ColumnKey(col.Key.MatrixKey, col.Index, col.Key.Key);
                 return col;
             })).ToList();
+
+            return cols;
         }
 
         private List<RowDefinition> ConcatXRowsDefinitions(Matrix rightMat, MatrixConcatStrategy rowsStrategy, int leftColsCount)
@@ -231,21 +239,20 @@ namespace Xsheet
             return new ColumnCellReader(RowValues.SelectMany(rv => rv.Cells.Where(c => c.ColIndex == cell.ColIndex)));
         }
 
-        public RowValue Row(MatrixCellValue cell)
+        public RowCellReader Row(MatrixCellValue cell, int rowIndex = -1)
         {
-            return Row(cell.RowIndex);
-        }
-
-        public RowValue Row(int rowIndex)
-        {
-            return RowValues.ElementAt(rowIndex - (HasHeaders ? 1 : 0));
+            if (rowIndex == -1)
+            {
+                rowIndex = cell.RowIndex;
+            }
+            return new RowCellReader(this, cell, rowIndex);
         }
 
         private List<RowValue> ConcatXRowValues(Matrix rightMat, int leftColsCount)
         {
-            var values = this.RowValues.Select((leftValue, rowIndex) =>
+            var values = this.RowValues.Select((leftValue, rowListIndex) =>
             {
-                var rightValue = rightMat.RowValues.ElementAtOrDefault(rowIndex);
+                var rightValue = rightMat.RowValues.ElementAtOrDefault(rowListIndex);
                 if (rightValue != null)
                 {
                     leftValue.ValuesByColIndex = rightValue.ValuesByColIndex
@@ -255,7 +262,8 @@ namespace Xsheet
 
                     leftValue.Cells = leftValue.Cells
                         .Concat(rightValue.Cells.Select(cell => new MatrixCellValue(
-                            rowIndex, 
+                            rightMat.Key,
+                            leftValue.Cells.ElementAt(0).RowIndex, 
                             cell.ColIndex + leftColsCount, 
                             rightMat.GetOwnColumnByIndex(cell.ColIndex).Name, 
                             cell.Value

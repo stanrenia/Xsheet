@@ -56,9 +56,34 @@ namespace Xsheet.Tests
                 .Build();
 
             // THEN
-            Check.That(mat.ColumnsDefinitions).IsEquivalentTo(cols);
+            var actualCols = mat.ColumnsDefinitions.ToList();
+            Check.That(actualCols[0].Name).IsEqualTo("ColA");
+            Check.That(actualCols[0].Index).IsEqualTo(0);
+            Check.That(actualCols[0].DataType).IsEqualTo(DataTypes.Text);
+            Check.That(actualCols[0].HeaderCellFormat).IsNull();
+            Check.That(actualCols[0].Key).IsEqualTo(new ColumnKey(new MatrixKey(), 0, "ColA"));
             Check.That(mat.CountOfRows).IsEqualTo(10);
             Check.That(mat.CountOfColumns).IsEqualTo(1);
+        }
+
+        [Fact]
+        public void Should_Build_Matrix_With_Key_And_Columns_Definition()
+        {
+            // GIVEN
+            var cols = new List<ColumnDefinition>
+            {
+                new ColumnDefinition { Name = "ColA" }
+            };
+
+            // WHEN
+            var mat = Matrix.With().Key("m1", 1)
+                .RowsCount(10)
+                .Cols(cols)
+                .Build();
+
+            // THEN
+            var actualCols = mat.ColumnsDefinitions.ToList();
+            Check.That(actualCols[0].Key).IsEqualTo(new ColumnKey(new MatrixKey("m1", 1), 0, "ColA"));
         }
 
         [Fact]
@@ -181,27 +206,27 @@ namespace Xsheet.Tests
             Check.That(cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "B2", "A3", "B3", "A4", "B4");
         }
 
-        [Fact]
-        public void Should_Get_Row_From_Cell()
-        {
-            // GIVEN
-            var values = new List<RowValue>
-            {
-                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
-                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
-                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
-            };
+        //[Fact]
+        //public void Should_Get_Row_From_Cell()
+        //{
+        //    // GIVEN
+        //    var values = new List<RowValue>
+        //    {
+        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+        //    };
 
-            var mat = Matrix.With()
-                .RowValues(values)
-                .Build();
+        //    var mat = Matrix.With()
+        //        .RowValues(values)
+        //        .Build();
 
-            // WHEN
-            RowValue row = mat.Row(values[0].Cells.ElementAt(0));
+        //    // WHEN
+        //    RowCellReader row = mat.Row(values[0].Cells.ElementAt(0));
 
-            // THEN
-            Check.That(row).IsEqualTo(values[0]);
-        }
+        //    // THEN
+        //    Check.That(row.Col().IsEqualTo(values[0]);
+        //}
 
         [Fact]
         public void Should_Get_Col_From_Row()
