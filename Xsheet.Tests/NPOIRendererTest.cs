@@ -559,28 +559,30 @@ namespace Xsheet.Tests
                         ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>> {
                             { Total, (mat, cell) => {
                                 var row = mat.Row(cell);
-                                return row.Col(Score1).Value + row.Col(Score2).Value + row.Col(Score3).Value;
+                                return Convert.ToDouble(row.Col(Score1).Value) 
+                                + Convert.ToDouble(row.Col(Score2).Value) 
+                                + Convert.ToDouble(row.Col(Score3).Value);
                             }},
                             { Mean, (mat, cell) => {
                                 var row = mat.Row(cell);
-                                return $"=MEAN({row.Col(Score1).Value};{row.Col(Score2).Value};{row.Col(Score2).Value})";
+                                return $"=AVERAGE({row.Col(Score1).Value},{row.Col(Score2).Value},{row.Col(Score3).Value})";
                             } },
                         }
                     },
-                    new RowDefinition { 
-                        Key = FinalTotal, 
+                    new RowDefinition {
+                        Key = FinalTotal,
                         DefaultCellFormat = new NPOIFormat { CellStyle = finalTotalStyle },
                         ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
                         {
-                            { Score1, (mat, cell) => mat.Col(cell).Values.Sum() },
-                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[1].Address}:{mat.Row(cell).Col(Score2).Address})" },
+                            { Score1, (mat, cell) => mat.Col(cell).Values.Cast<double>().Sum() },
+                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell.RowIndex - 1).Col(Score2).Address})" },
                             { Score3, (mat, cell) => {
-                                var cells = mat.Col(cell).Cells.SKip(1);
+                                var cells = mat.Col(cell).Cells;
                                 var formula = string.Join('+', cells);
                                 return $"={formula}";
                             }},
-                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[1].Address}:{mat.Row(cell.RowIndex - 1).Col(Total).Address})" },
-                            { Mean, (mat, cell) => $"=MEAN({mat.Col(cell).Cells[1].Address}:{mat.Row(cell.RowIndex - 1).Col(Mean).Address})" },
+                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell.RowIndex - 1).Col(Total).Address})" },
+                            { Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.Row(cell.RowIndex - 1).Col(Mean).Address})" },
                         }
                     },
                 })
@@ -596,29 +598,23 @@ namespace Xsheet.Tests
                 })
                 .Build();
 
-            var ms = new MemoryStream();
-
             // WHEN
-            _renderer.GenerateExcelFile(m1, ms);
-            ms.Close();
-
-            WriteDebugFile(_defaultFormatApplier, m1, FILE_TEST_LOOKUP_1, _workbook);
+            var filename = WriteDebugFile(_defaultFormatApplier, m1, FILE_TEST_LOOKUP_1, _workbook);
 
             // THEN
-            var fileBytes = ms.ToArray();
-            Check.That(fileBytes).Not.IsEmpty();
-
-            var readWb = new XSSFWorkbook(new MemoryStream(fileBytes));
+            var readWb = new XSSFWorkbook(File.OpenRead(filename));
             var readSheet = readWb.GetSheetAt(0);
-            
+
             var row1 = readSheet.GetRow(1);
             Check.That(row1.Cells[0].StringCellValue).IsEqualTo("Mario");
-            Check.That(row1.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(10, 20, 30, 60, 20);
+            Check.That(row1.Cells.Last().CellFormula).IsEqualTo("AVERAGE(10,20,30)");
+            Check.That(row1.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(10, 20, 30, 60, 0);
 
             var row2 = readSheet.GetRow(2);
             Check.That(row2.Cells[0].StringCellValue).IsEqualTo("Luigi");
-            Check.That(row2.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(12, 23, 34, 69, 23);
-            
+            Check.That(row2.Cells.Last().CellFormula).IsEqualTo("AVERAGE(12,23,34)");
+            Check.That(row2.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(12, 23, 34, 69, 0);
+
             var row3 = readSheet.GetRow(3);
             Check.That(row3.Cells[0].StringCellValue).IsEqualTo("Total");
             Check.That(row3.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(22, 43, 64, 129, 21.5);
@@ -642,30 +638,39 @@ namespace Xsheet.Tests
             WriteDebugFile(_defaultFormatApplier, mat, fileName);
         }
 
-        private void WriteDebugFile(FormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null)
+        private string WriteDebugFile(FormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null)
         {
             if (wb is null)
             {
                 wb = new XSSFWorkbook();
             }
             var rd = new NPOIRenderer(wb, formatApplier);
-            var fs = File.Create($"{filename}_{DateTime.Now.ToString("HHmmss")}.xlsx");
+            var targetFilename = GetFileName(filename);
+            var fs = File.Create(targetFilename);
             _fileStreamToClose.Add(fs);
             rd.GenerateExcelFile(mat, fs);
+            return targetFilename;
         }
 
         private void WriteDebugFile(IWorkbook wb, string filename)
         {
-            var fs = File.Create($"{filename}_{DateTime.Now.ToString("HHmmss")}.xlsx");
+            var fs = File.Create(GetFileName(filename));
             wb.Write(fs);
         }
 
-        private void WriteDebugFileAndClose(IWorkbook wb, string filename)
+        private string WriteDebugFileAndClose(IWorkbook wb, string filename)
         {
-            var fs = File.Create($"{filename}_{DateTime.Now.ToString("HHmmss")}.xlsx");
+            var targetFilename = GetFileName(filename);
+            var fs = File.Create(targetFilename);
             wb.Write(fs);
             fs.Close();
             wb.Close();
+            return targetFilename;
+        }
+
+        private static string GetFileName(string filename)
+        {
+            return $"{filename}_{DateTime.Now.ToString("HHmmss")}.xlsx";
         }
     }
 }

@@ -3,6 +3,7 @@
     public enum DataTypes
     {
         Text,
-        Number
+        Number,
+        Formula
     }
 }

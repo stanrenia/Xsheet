@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Xsheet
 {
@@ -9,5 +11,11 @@ namespace Xsheet
         public Dictionary<string, object> ValuesByColName { get; set; } = new Dictionary<string, object>();
 
         public Dictionary<int, object> ValuesByColIndex { get; internal set; } = new Dictionary<int, object>();
+        public IEnumerable<MatrixCellValue> Cells { get; internal set; } = new List<MatrixCellValue>();
+
+        public MatrixCellValue Col(string colName)
+        {
+            return Cells.First(c => c.ColName == colName);
+        }
     }
 }

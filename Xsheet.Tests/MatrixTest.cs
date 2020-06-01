@@ -1,6 +1,9 @@
 ﻿using NFluent;
+using NPOI.SS.Formula.Functions;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Xsheet.Tests
@@ -59,6 +62,26 @@ namespace Xsheet.Tests
         }
 
         [Fact]
+        public void Should_Throw_When_Build_Matrix_With_Columns_Definition_Without_Name_And_Label()
+        {
+            // GIVEN
+            var cols = new List<ColumnDefinition>
+            {
+                new ColumnDefinition { }
+            };
+
+            var matBuilder = Matrix.With()
+                .RowsCount(10)
+                .Cols(cols);
+
+            // WHEN
+            Action action = () => matBuilder.Build();
+
+            // THEN
+            Check.ThatCode(action).Throws<Exception>();
+        }
+
+        [Fact]
         public void Should_Build_Matrix_With_Rows_Definition_And_Cols_Count()
         {
             // GIVEN
@@ -98,6 +121,136 @@ namespace Xsheet.Tests
             Check.That(mat.RowValues).IsEquivalentTo(values);
             Check.That(mat.CountOfRows).IsEqualTo(1);
             Check.That(mat.CountOfColumns).IsEqualTo(2);
+        }
+
+        [Fact]
+        public void Should_Build_Matrix_With_Cells_Without_Headers()
+        {
+            // GIVEN
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            // WHEN
+            var mat = Matrix.With()
+                .WithoutHeadersRow()
+                .RowValues(values)
+                .Build();
+
+            // THEN
+            Check.That(mat.RowValues).HasSize(3);
+            List<MatrixCellValue> cells = mat.RowValues.SelectMany(rv => rv.Cells).ToList();
+            Check.That(cells).HasSize(6);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.Value))).ContainsExactly(11, 44, 22, 55, 33, 66);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.RowIndex))).ContainsExactly(0, 0, 1, 1, 2, 2);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.ColIndex))).ContainsExactly(0, 1, 0, 1, 0, 1);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A1", "B1", "A2", "B2", "A3", "B3");
+        }
+
+        [Fact]
+        public void Should_Build_Matrix_With_Cells_With_Headers()
+        {
+            // GIVEN
+            var cols = new List<ColumnDefinition> { 
+                new ColumnDefinition { Name = "colA", Label = "I'm A" }, 
+                new ColumnDefinition { Name = "colB", Label = "I'm B" } 
+            };
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            // WHEN
+            var mat = Matrix.With()
+                .Cols(cols)
+                .RowValues(values)
+                .Build();
+
+            // THEN
+            Check.That(mat.RowValues).HasSize(3);
+            List<MatrixCellValue> cells = mat.RowValues.SelectMany(rv => rv.Cells).ToList();
+            Check.That(cells).HasSize(6);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.Value))).ContainsExactly(11, 44, 22, 55, 33, 66);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.RowIndex))).ContainsExactly(1, 1, 2, 2, 3, 3);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.ColIndex))).ContainsExactly(0, 1, 0, 1, 0, 1);
+            Check.That(cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "B2", "A3", "B3", "A4", "B4");
+        }
+
+        [Fact]
+        public void Should_Get_Row_From_Cell()
+        {
+            // GIVEN
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            var mat = Matrix.With()
+                .RowValues(values)
+                .Build();
+
+            // WHEN
+            RowValue row = mat.Row(values[0].Cells.ElementAt(0));
+
+            // THEN
+            Check.That(row).IsEqualTo(values[0]);
+        }
+
+        [Fact]
+        public void Should_Get_Col_From_Row()
+        {
+            // GIVEN
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            var mat = Matrix.With()
+                .RowValues(values)
+                .Build();
+
+            // WHEN
+            MatrixCellValue cell = mat.Row(values[0].Cells.ElementAt(0)).Col("colB");
+
+            // THEN
+            Check.That(cell.RowIndex).IsEqualTo(1);
+            Check.That(cell.ColIndex).IsEqualTo(1);
+            Check.That(cell.Address).IsEqualTo("B2");
+            Check.That(cell.Value).IsEqualTo(44);
+        }
+
+        [Fact]
+        public void Should_Get_Col_From_Cell()
+        {
+            // GIVEN
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            var mat = Matrix.With()
+                .RowValues(values)
+                .Build();
+
+            // WHEN
+            ColumnCellReader colReader = mat.Col(values[0].Cells.ElementAt(0));
+
+            // THEN
+            Check.That(colReader.Values).ContainsExactly(11, 22, 33);
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.ColIndex))).IsOnlyMadeOf(0);
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.ColName))).IsOnlyMadeOf("colA");
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "A3", "A4");
         }
 
         public class TestDataColumnDefinition1 : IEnumerable<object[]>
