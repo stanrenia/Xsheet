@@ -277,6 +277,30 @@ namespace Xsheet.Tests
             Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.ColName))).IsOnlyMadeOf("colA");
             Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "A3", "A4");
         }
+        [Fact]
+        public void Should_Get_Col_From_Cell_And_Filter_Cells_By_RowKey()
+        {
+            // GIVEN
+            var values = new List<RowValue>
+            {
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+            };
+
+            var mat = Matrix.With()
+                .RowValues(values)
+                .Build();
+
+            // WHEN
+            ColumnCellReader colReader = mat.Col(values[0].Cells.ElementAt(0));
+
+            // THEN
+            Check.That(colReader.Values).ContainsExactly(11, 22, 33);
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.ColIndex))).IsOnlyMadeOf(0);
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.ColName))).IsOnlyMadeOf("colA");
+            Check.That(colReader.Cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "A3", "A4");
+        }
 
         public class TestDataColumnDefinition1 : IEnumerable<object[]>
         {

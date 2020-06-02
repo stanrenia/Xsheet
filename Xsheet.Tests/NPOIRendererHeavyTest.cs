@@ -17,6 +17,7 @@ namespace Xsheet.Tests
         private readonly List<Stream> _fileStreamToClose;
 
         private const string FILE_TEST_HEAVY_1 = "test_heavy1";
+        private const string FILE_TEST_HEAVY_2 = "test_heavy2";
 
         public NPOIRendererHeavyTest()
         {
@@ -127,6 +128,62 @@ namespace Xsheet.Tests
                     new RowValue { Key = FinalTotal }
                             })
                             .Build();
+        }
+
+        [Fact]
+        public void Should_Render_Weekly_Game_Score_Report()
+        {
+            // GIVEN
+            var monthStyle = _workbook.CreateCellStyle();
+            monthStyle.FillPattern = FillPattern.SolidForeground;
+            monthStyle.FillForegroundColor = IndexedColors.LightBlue.Index;
+            var monthFont = _workbook.CreateFont();
+            monthFont.IsBold = true;
+            monthStyle.SetFont(monthFont);
+
+            var mat = Matrix.With().Key(index: 0)
+                .Cols(new List<ColumnDefinition> {
+                    new ColumnDefinition { Name = "Week", Label = "Week", DataType = DataTypes.Text },
+                    new ColumnDefinition { Name = "Score1", Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Var1", Label = "Score1/Score3", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Score2", Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Var2", Label = "Score2/Score3", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Score3", Label = "Score 3", DataType = DataTypes.Number }
+                })
+                .Rows(new List<RowDefinition>
+                {
+                    new RowDefinition {
+                        Key = "WEEK",
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Var1", (mat, cell) => $"=VAR{mat.Row(cell).Col("Score1")},{mat.Row(cell).Col("Score3")}"},
+                            { "Var2", (mat, cell) => $"=VAR{mat.Row(cell).Col("Score2")},{mat.Row(cell).Col("Score3")}"}
+                        }
+                    },
+                    new RowDefinition {
+                        Key = "MONTH",
+                        DefaultCellFormat = new NPOIFormat { CellStyle = monthStyle },
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Var1", (mat, cell) => $"=VAR{mat.Row(cell).Col("Score1")},{mat.Row(cell).Col("Score3")}"},
+                            { "Var2", (mat, cell) => $"=VAR{mat.Row(cell).Col("Score2")},{mat.Row(cell).Col("Score3")}"},
+                            { "Score1", (mat, cell) => {
+                                var previousMonthRowIndex = mat.RowValues.FirstOrDefault(rv => rv.Key == "MONTH" && rv.RowIndex < cell.RowIndex)?.RowIndex ?? -1;
+                                // TODO mat.Rows() -> RowsReader , maybe disinct from RowReader because of performance (mem allocation)
+                                mat.RowValues.Where(rv => rv.RowIndex < cell.RowIndex && rv.RowIndex > previousMonthRowIndex)
+                                .Select(...);
+                            }}
+                        }
+                    },
+                    // TODO TOTAL
+                    // TODO AVERAGE
+                })
+                // TODO Make Data
+
+            // WHEN
+
+            // THEN
+
         }
     }
 }
