@@ -115,7 +115,7 @@ namespace Xsheet
 
                             var colName = GetOwnColumnByIndex(colIndex).Name;
                             rowValue.ValuesByColIndex.Add(colIndex, cellValue?.Value);
-                            cells.Add(new MatrixCellValue(this.Key, rowIndex, colIndex, colName, cellValue?.Value));
+                            cells.Add(new MatrixCellValue(this.Key, rowValue, rowIndex, colIndex, colName, cellValue?.Value));
                         }
                         rowValue.Cells = cells;
                         rowIndex++;
@@ -248,6 +248,19 @@ namespace Xsheet
             return new RowCellReader(this, cell, rowIndex);
         }
 
+        public int RowIndexOfPrevious(string rowKey, MatrixCellValue startCell)
+        {
+            return RowIndexOfPrevious(rowKey, startCell.RowIndex);
+        }
+
+        public int RowIndexOfPrevious(string rowKey, int startRowIndex)
+        {
+            return this.RowValues
+                .OrderByDescending(rv => rv.RowIndex)
+                .FirstOrDefault(rv => rv.Key == rowKey && rv.RowIndex < startRowIndex)?.RowIndex ?? -1;
+        }
+
+
         private List<RowValue> ConcatXRowValues(Matrix rightMat, int leftColsCount)
         {
             var values = this.RowValues.Select((leftValue, rowListIndex) =>
@@ -263,6 +276,7 @@ namespace Xsheet
                     leftValue.Cells = leftValue.Cells
                         .Concat(rightValue.Cells.Select(cell => new MatrixCellValue(
                             rightMat.Key,
+                            rightValue,
                             leftValue.Cells.ElementAt(0).RowIndex, 
                             cell.ColIndex + leftColsCount, 
                             rightMat.GetOwnColumnByIndex(cell.ColIndex).Name, 
