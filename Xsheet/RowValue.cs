@@ -12,5 +12,6 @@ namespace Xsheet
 
         public Dictionary<int, object> ValuesByColIndex { get; internal set; } = new Dictionary<int, object>();
         public IEnumerable<MatrixCellValue> Cells { get; internal set; } = new List<MatrixCellValue>();
+        public int RowIndex { get => Cells?.ElementAt(0).RowIndex ?? -1; }
     }
 }

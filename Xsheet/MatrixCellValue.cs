@@ -2,9 +2,10 @@
 {
     public class MatrixCellValue
     {
-        public MatrixCellValue(MatrixKey key, int rowIndex, int colIndex, string colName, object value)
+        public MatrixCellValue(MatrixKey key, RowValue row, int rowIndex, int colIndex, string colName, object value)
         {
             MatrixKey = key;
+            Row = row;
             RowIndex = rowIndex;
             ColIndex = colIndex;
             ColName = colName;
@@ -18,5 +19,7 @@
         public string ColName { get; }
         public string Address { get; }
         public object Value { get; }
+
+        public RowValue Row { get; }
     }
 }

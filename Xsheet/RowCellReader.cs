@@ -24,5 +24,7 @@ namespace Xsheet
                 .ElementAt(_matrix.HasHeaders ? _cellRowIndex - 1 : _cellRowIndex)
                 .Cells.First(c => c.ColIndex == colDef.Index);
         }
+
+
     }
 }

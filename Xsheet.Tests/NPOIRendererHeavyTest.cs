@@ -17,6 +17,7 @@ namespace Xsheet.Tests
         private readonly List<Stream> _fileStreamToClose;
 
         private const string FILE_TEST_HEAVY_1 = "test_heavy1";
+        private const string FILE_TEST_HEAVY_2 = "test_heavy2";
 
         public NPOIRendererHeavyTest()
         {
@@ -127,6 +128,190 @@ namespace Xsheet.Tests
                     new RowValue { Key = FinalTotal }
                             })
                             .Build();
+        }
+
+        [Fact]
+        public void Should_Render_Weekly_Game_Score_Report()
+        {
+            // GIVEN
+            IFont BoldFont()
+            {
+                var boldFont = _workbook.CreateFont();
+                boldFont.IsBold = true;
+                return boldFont;
+            }
+
+            var monthStyle = _workbook.CreateCellStyle();
+            monthStyle.FillPattern = FillPattern.SolidForeground;
+            monthStyle.FillForegroundColor = IndexedColors.LightBlue.Index;
+            monthStyle.SetFont(BoldFont());
+
+            var totalStyle = _workbook.CreateCellStyle();
+            totalStyle.FillPattern = FillPattern.SolidForeground;
+            totalStyle.FillForegroundColor = IndexedColors.LightOrange.Index;
+            totalStyle.SetFont(BoldFont());
+
+            var valueMapVar1 = GetVariation("Score1", "Score3");
+            var valueMapVar2 = GetVariation("Score2", "Score3");
+            var valueMapMonthlyScore = ValueMapMonthlyScore();
+            var valueMapTotalScore = ValueMapTotalScore();
+            var valueMapAverageScore = ValueMapAverageScore();
+
+            var rowValues = GetScoreValues()
+            .Select(score => new RowValue {
+                Key = score.Month != null ? "MONTH" : "WEEK",
+                ValuesByColName = score.ToDictionary()
+            }).Concat(new List<RowValue> {
+                new RowValue { Key = "TOTAL" },
+                new RowValue { Key = "AVERAGE" },
+            })
+            .ToList();
+
+            var mat = Matrix.With().Key(index: 0)
+                .Cols(new List<ColumnDefinition> {
+                    new ColumnDefinition { Name = "Week", Label = "Week", DataType = DataTypes.Text },
+                    new ColumnDefinition { Name = "Score1", Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Var1", Label = "Score1/Score3", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Score2", Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Var2", Label = "Score2/Score3", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Score3", Label = "Score 3", DataType = DataTypes.Number }
+                })
+                .Rows(new List<RowDefinition>
+                {
+                    new RowDefinition {
+                        Key = "WEEK",
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Var1", valueMapVar1 },
+                            { "Var2", valueMapVar2 }
+                        }
+                    },
+                    new RowDefinition {
+                        Key = "MONTH",
+                        DefaultCellFormat = new NPOIFormat { CellStyle = monthStyle },
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Var1", valueMapVar1 },
+                            { "Var2", valueMapVar2 },
+                            { "Score1", valueMapMonthlyScore },
+                            { "Score2", valueMapMonthlyScore },
+                            { "Score3", valueMapMonthlyScore }
+                        }
+                    },
+                    new RowDefinition
+                    {
+                        Key = "TOTAL",
+                        DefaultCellFormat = new NPOIFormat { CellStyle = totalStyle },
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Week", (mat, cell) => "TOTAL" },
+                            { "Var1", valueMapVar1 },
+                            { "Var2", valueMapVar2 },
+                            { "Score1", valueMapTotalScore },
+                            { "Score2", valueMapTotalScore },
+                            { "Score3", valueMapTotalScore },
+                        }
+                    },
+                    new RowDefinition
+                    {
+                        Key = "AVERAGE",
+                        DefaultCellFormat = new NPOIFormat { CellStyle = totalStyle },
+                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+                        {
+                            { "Week", (mat, cell) => "AVERAGE" },
+                            { "Var1", valueMapVar1 },
+                            { "Var2", valueMapVar2 },
+                            { "Score1", valueMapAverageScore },
+                            { "Score2", valueMapAverageScore },
+                            { "Score3", valueMapAverageScore },
+                        }
+                    }
+                })
+                .RowValues(rowValues)
+                .Build();
+
+            // WHEN
+            var filename = TestUtils.WriteDebugFile(_defaultFormatApplier, mat, FILE_TEST_HEAVY_2, _workbook, _fileStreamToClose);
+
+            // THEN
+
+        }
+
+        private List<ScoreValue> GetScoreValues()
+        {
+            var random = new Random();
+            var monthByWeek = new List<int> { 4, 8, 12, 17, 22, 26, 30, 35, 39, 43, 47, 52 };
+            return Enumerable.Range(1, 52).SelectMany(i =>
+            {
+                var scores = new List<ScoreValue>
+                {
+                    new ScoreValue
+                    {
+                        Week = i,
+                        Score1 = random.Next(999, 99999),
+                        Score2 = random.Next(999, 99999),
+                        Score3 = random.Next(999, 99999),
+                    }
+                };
+
+                if (monthByWeek.Contains(i))
+                {
+                    var monthName = new DateTime(2010, monthByWeek.IndexOf(i)+1, 1).ToString("MMMM");
+                    scores.Add(new ScoreValue { Month = monthName });
+                }
+
+                return scores;
+            }).ToList();
+        }
+
+        private static Func<Matrix, MatrixCellValue, object> ValueMapAverageScore()
+        {
+            return (mat, cell) => $"=AVERAGE({mat.Col(cell).CellsOfRowKey("WEEK").Addresses()})";
+        }
+
+        private static Func<Matrix, MatrixCellValue, object> ValueMapTotalScore()
+        {
+            return (mat, cell) => $"=SUM({mat.Col(cell).CellsOfRowKey("WEEK").Addresses()})";
+        }
+
+        private static Func<Matrix, MatrixCellValue, object> ValueMapMonthlyScore()
+        {
+            return (mat, cell) =>
+            {
+                var addresses = mat.Col(cell)
+                    .CellsBetween(cell, mat.RowIndexOfPrevious("MONTH", cell))
+                    .Addresses();
+                return $"=SUM({addresses})";
+            };
+        }
+
+        private static Func<Matrix, MatrixCellValue, object> GetVariation(string fromColName, string toColName)
+        {
+            return (mat, cell) => {
+                var from = mat.Row(cell).Col(fromColName).Address;
+                var to = mat.Row(cell).Col(toColName).Address;
+                return $"=(({to}-{from})/{from})*100";
+            };
+        }
+    }
+
+    internal class ScoreValue
+    {
+        public int Week { get; internal set; }
+        public int Score1 { get; internal set; }
+        public int Score2 { get; internal set; }
+        public int Score3 { get; internal set; }
+        public string Month { get; internal set; }
+
+        public Dictionary<string, object> ToDictionary()
+        {
+            return new Dictionary<string, object>
+            {
+                { "Week", Month is null ? Week.ToString() : Month },
+                { "Score1", Score1 },
+                { "Score2", Score2 },
+                { "Score3", Score3 }
+            };
         }
     }
 }
