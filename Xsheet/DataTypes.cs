@@ -4,6 +4,7 @@
     {
         Text,
         Number,
-        Formula
+        Boolean,
+        Date
     }
 }

@@ -71,16 +71,15 @@ namespace XSheet.Renderers
         private void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, Cell cell)
         {
             var value = matrixCell.Value;
-            var dataType = colDef.DataType;
+            bool isFormula = false;
 
             if (matrixCell.ColName != null && rowDef.ValuesMapping.TryGetValue(matrixCell.ColName, out var func))
             {
                 var calculatedValue = func.Invoke(mat, matrixCell);
                 if (calculatedValue is string stringValue && stringValue.StartsWith(CHAR_FORMULA_STARTS))
                 {
-                    // TODO Confirm if necessary
-                    //value = stringValue.Substring(1);
-                    dataType = DataTypes.Formula;
+                    value = stringValue.Substring(1);
+                    isFormula = true;
                 }
                 else
                 {
@@ -93,13 +92,18 @@ namespace XSheet.Renderers
                 return;
             }
 
-            switch (dataType)
+            switch (colDef.DataType)
             {
+                case DataTypes.Boolean:
+                    cell.DataType = CellValues.Boolean;
+                    break;
+                case DataTypes.Date:
+                    cell.DataType = CellValues.Date;
+                    break;
                 case DataTypes.Number:
                     cell.DataType = CellValues.Number;
                     break;
                 case DataTypes.Text:
-                case DataTypes.Formula:
                     cell.DataType = CellValues.String;
                     break;
                 default:
@@ -107,7 +111,18 @@ namespace XSheet.Renderers
                     break;
             }
 
-            cell.CellValue = new CellValue(value.ToString());
+            if (isFormula)
+            {
+                cell.CellFormula = new CellFormula(value.ToString());
+            }
+            else if (cell.DataType == CellValues.Date)
+            {
+                cell.CellValue = new CellValue(Convert.ToDateTime(value));
+            }
+            else
+            {
+                cell.CellValue = new CellValue(value.ToString());
+            }
         }
     }
 }

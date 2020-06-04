@@ -71,7 +71,7 @@ namespace XSheet.Renderers
         private static void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, ICell npoiCell)
         {
             var value = matrixCell.Value;
-            var dataType = colDef.DataType;
+            bool isFormula = false;
 
             if (matrixCell.ColName != null && rowDef.ValuesMapping.TryGetValue(matrixCell.ColName, out var func))
             {
@@ -79,7 +79,7 @@ namespace XSheet.Renderers
                 if (calculatedValue is string stringValue && stringValue.StartsWith(CHAR_FORMULA_STARTS))
                 {
                     value = stringValue.Substring(1);
-                    dataType = DataTypes.Formula;
+                    isFormula = true;
                 }
                 else
                 {
@@ -92,20 +92,30 @@ namespace XSheet.Renderers
                 return;
             }
 
-            switch (dataType)
+            if (isFormula)
             {
-                case DataTypes.Number:
-                    npoiCell.SetCellValue(Convert.ToDouble(value));
-                    break;
-                case DataTypes.Text:
-                    npoiCell.SetCellValue(Convert.ToString(value));
-                    break;
-                case DataTypes.Formula:
-                    npoiCell.SetCellFormula(Convert.ToString(value));
-                    break;
-                default:
-                    npoiCell.SetCellValue(Convert.ToString(value));
-                    break;
+                npoiCell.SetCellFormula(Convert.ToString(value));
+            }
+            else
+            {
+                switch (colDef.DataType)
+                {
+                    case DataTypes.Boolean:
+                        npoiCell.SetCellValue(Convert.ToBoolean(value));
+                        break;
+                    case DataTypes.Date:
+                        npoiCell.SetCellValue(Convert.ToDateTime(value));
+                        break;
+                    case DataTypes.Number:
+                        npoiCell.SetCellValue(Convert.ToDouble(value));
+                        break;
+                    case DataTypes.Text:
+                        npoiCell.SetCellValue(Convert.ToString(value));
+                        break;
+                    default:
+                        npoiCell.SetCellValue(Convert.ToString(value));
+                        break;
+                }
             }
         }
     }
