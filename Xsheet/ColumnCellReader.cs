@@ -17,7 +17,7 @@ namespace Xsheet
 
         public IEnumerable<MatrixCellValue> CellsOfRowKey(string rowKey)
         {
-            return Cells.Where(c => c.Row.Key == "WEEK");
+            return Cells.Where(c => c.Row.Key == rowKey);
         }
 
         public List<MatrixCellValue> CellsBetween(MatrixCellValue startCell, int endRowIndex)

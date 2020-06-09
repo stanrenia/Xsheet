@@ -59,6 +59,7 @@ namespace XSheet.Renderers
                 {
                     var colDef = mat.GetOwnColumnByIndex(matrixCell.ColIndex);
                     Cell cell = new Cell();
+                    // TODO Implement IFormatApplier for OpenXml
                     //_formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, npoiCell);
                     SetCellValue(mat, matrixCell, rowDef, colDef, cell);
                     row.Append(cell);
