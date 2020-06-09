@@ -52,7 +52,7 @@ Matrix.With()
             // 4) Compute the SUM of column Score1, at runtime
             { Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum() },
             // 5) Define the SUM of column Score2 using Excel's SUM formula with Cells Addresses
-            // FROM the top 1st row to row TO the row above the current 'FinalTotal' row
+            // FROM the top 1st row TO the row above the current 'FinalTotal' row
             { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Score2).Address})" },
             // 6) Excel's custom formula Eg: =D2+D3+D4
             { Score3, (mat, cell) => {
