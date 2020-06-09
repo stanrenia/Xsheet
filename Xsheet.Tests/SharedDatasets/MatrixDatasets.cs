@@ -78,14 +78,12 @@ namespace Xsheet.Tests.SharedDatasets
                         {
                             { Playername, (mat, cell) => "TOTAL" },
                             { Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum() },
-                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Score2).Address})" },
+                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Score2).Address})" },
                             { Score3, (mat, cell) => {
-                                var adresses = mat.Col(cell).Cells.SkipLast(1).Select(c => c.Address);
-                                var formula = string.Join('+', adresses);
-                                return $"={formula}";
+                                return $"={mat.Col(cell).Cells.SkipLast(1).Addresses("+")}";
                             }},
-                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Total).Address})" },
-                            { Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Mean).Address})" },
+                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Total).Address})" },
+                            { Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Mean).Address})" },
                         }
                     },
                             })

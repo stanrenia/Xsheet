@@ -248,6 +248,11 @@ namespace Xsheet
             return new RowCellReader(this, cell, rowIndex);
         }
 
+        public RowCellReader RowAbove(MatrixCellValue cell)
+        {
+            return new RowCellReader(this, cell, cell.RowIndex - 1);
+        }
+
         public int RowIndexOfPrevious(string rowKey, MatrixCellValue startCell)
         {
             return RowIndexOfPrevious(rowKey, startCell.RowIndex);
