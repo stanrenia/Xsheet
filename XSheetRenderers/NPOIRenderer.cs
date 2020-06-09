@@ -9,11 +9,10 @@ namespace XSheet.Renderers
 {
     public class NPOIRenderer : IMatrixRenderer
     {
-        private const string CHAR_FORMULA_STARTS = "=";
         private readonly IWorkbook _wb;
-        private readonly FormatApplier _formatApplier;
+        private readonly IFormatApplier _formatApplier;
 
-        public NPOIRenderer(IWorkbook wb, FormatApplier formatApplier)
+        public NPOIRenderer(IWorkbook wb, IFormatApplier formatApplier)
         {
             _wb = wb;
             _formatApplier = formatApplier;
@@ -76,7 +75,7 @@ namespace XSheet.Renderers
             if (matrixCell.ColName != null && rowDef.ValuesMapping.TryGetValue(matrixCell.ColName, out var func))
             {
                 var calculatedValue = func.Invoke(mat, matrixCell);
-                if (calculatedValue is string stringValue && stringValue.StartsWith(CHAR_FORMULA_STARTS))
+                if (calculatedValue is string stringValue && stringValue.StartsWith(MatrixConstants.CHAR_FORMULA_STARTS))
                 {
                     value = stringValue.Substring(1);
                     isFormula = true;

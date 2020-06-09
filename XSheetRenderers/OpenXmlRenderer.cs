@@ -10,8 +10,6 @@ namespace XSheet.Renderers
 {
     public class OpenXmlRenderer : IMatrixRenderer
     {
-        private const string CHAR_FORMULA_STARTS = "=";
-
         public OpenXmlRenderer()
         {
         }
@@ -77,7 +75,7 @@ namespace XSheet.Renderers
             if (matrixCell.ColName != null && rowDef.ValuesMapping.TryGetValue(matrixCell.ColName, out var func))
             {
                 var calculatedValue = func.Invoke(mat, matrixCell);
-                if (calculatedValue is string stringValue && stringValue.StartsWith(CHAR_FORMULA_STARTS))
+                if (calculatedValue is string stringValue && stringValue.StartsWith(MatrixConstants.CHAR_FORMULA_STARTS))
                 {
                     value = stringValue.Substring(1);
                     isFormula = true;

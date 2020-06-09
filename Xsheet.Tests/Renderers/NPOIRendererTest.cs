@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
 using NFluent;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using Xsheet.Tests.SharedDatasets;
 using XSheet.Renderers;
 using XSheet.Renderers.Formats;
 using Xunit;
@@ -15,7 +17,7 @@ namespace Xsheet.Tests
     public class NPOIRendererTest : IDisposable
     {
         private readonly IWorkbook _workbook;
-        private readonly FormatApplier _defaultFormatApplier;
+        private readonly IFormatApplier _defaultFormatApplier;
         private readonly IMatrixRenderer _renderer;
         private readonly List<Stream> _fileStreamToClose;
         private const string FILE_DEBUG = "debug";
@@ -69,26 +71,8 @@ namespace Xsheet.Tests
         public void Should_Renderer_Matrix_Basic_Example()
         {
             // GIVEN
-            var cols = new List<ColumnDefinition>
-            {
-                new ColumnDefinition { Label = "Lastname", DataType = DataTypes.Text },
-                new ColumnDefinition { Label = "Firstname", DataType = DataTypes.Text },
-            };
-
-            var values = new List<RowValue> {
-                new RowValue {
-                    ValuesByColName = new Dictionary<string, object> {
-                        { "Lastname", "Doe" },
-                        { "Firstname", "John" }
-                    }
-                }
-            };
-
-            var mat = Matrix.With()
-                .Dimensions(2, 2)
-                .Cols(cols)
-                .RowValues(values)
-                .Build();
+            var dataset = MatrixDatasets.Given_BasicExample();
+            var mat = dataset.Matrix;
 
             var ms = new MemoryStream();
 
@@ -99,19 +83,7 @@ namespace Xsheet.Tests
             WriteDebugFile(mat, FILE_TEST_1);
 
             // THEN
-            var fileBytes = ms.ToArray();
-            Check.That(fileBytes).Not.IsEmpty();
-
-            var readWb = new XSSFWorkbook(new MemoryStream(fileBytes));
-            var readSheet = readWb.GetSheetAt(0);
-
-            var headerRow = readSheet.GetRow(0);
-            Check.That(headerRow.Cells[0].StringCellValue).IsEqualTo(cols[0].Label);
-            Check.That(headerRow.Cells[1].StringCellValue).IsEqualTo(cols[1].Label);
-
-            var firstValueRow = readSheet.GetRow(1);
-            Check.That(firstValueRow.Cells[0].StringCellValue).IsEqualTo(values[0].ValuesByColName["Lastname"]);
-            Check.That(firstValueRow.Cells[1].StringCellValue).IsEqualTo(values[0].ValuesByColName["Firstname"]);
+            SharedAssertions.Assert_Basic_Example(ms, dataset);
         }
 
         [Fact]
@@ -137,14 +109,14 @@ namespace Xsheet.Tests
             {
                 new RowDefinition { 
                     DefaultCellFormat = new BasicFormat { FontSize = 12 }, 
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { Lastname, new BasicFormat { FontStyle = FontStyle.Bold } },
                         { Age, new BasicFormat { BackgroundColor = ColorLightGreyIndex.ToString() } }
                     }
                 },
                 new RowDefinition { 
                     Key = Odd, 
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { Age, new BasicFormat { BackgroundColor = ColorBlueIndex.ToString() } }
                     } 
                 },
@@ -298,14 +270,14 @@ namespace Xsheet.Tests
             {
                 new RowDefinition {
                     DefaultCellFormat = new NPOIFormat { CellStyle = style2 },
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { Lastname, new NPOIFormat { CellStyle = style3 } },
                         { Age, new NPOIFormat { CellStyle = style4 } }
                     }
                 },
                 new RowDefinition {
                     Key = Odd,
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { Age, new NPOIFormat { CellStyle = style5 } }
                     }
                 },
@@ -539,33 +511,14 @@ namespace Xsheet.Tests
             var finalTotalStyle = _workbook.CreateCellStyle();
             finalTotalStyle.FillPattern = FillPattern.SolidForeground;
             finalTotalStyle.FillForegroundColor = IndexedColors.LightOrange.Index;
-
-            Matrix m1 = MatrixCellLookup(1, finalTotalStyle);
+            var format = new NPOIFormat { CellStyle = finalTotalStyle };
+            Matrix m1 = MatrixDatasets.Given_MatrixWithCellLookup(1, format);
 
             // WHEN
             var filename = WriteDebugFile(_defaultFormatApplier, m1, FILE_TEST_LOOKUP_1, _workbook);
 
             // THEN
-            var readWb = new XSSFWorkbook(File.OpenRead(filename));
-            var readSheet = readWb.GetSheetAt(0);
-
-            var row1 = readSheet.GetRow(1);
-            Check.That(row1.Cells[0].StringCellValue).IsEqualTo("Mario");
-            Check.That(row1.Cells.Last().CellFormula).IsEqualTo("AVERAGE(10,20,30)");
-            Check.That(row1.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(10, 20, 30, 60, 0);
-
-            var row2 = readSheet.GetRow(2);
-            Check.That(row2.Cells[0].StringCellValue).IsEqualTo("Luigi");
-            Check.That(row2.Cells.Last().CellFormula).IsEqualTo("AVERAGE(12,23,34)");
-            Check.That(row2.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(12, 23, 34, 69, 0);
-
-            var row3 = readSheet.GetRow(3);
-            Check.That(row3.Cells[0].StringCellValue).IsEqualTo("TOTAL");
-            Check.That(row3.Cells.Skip(1).Extracting("NumericCellValue")).ContainsExactly(22, 0, 0, 0, 0);
-            Check.That(row3.Cells[2].CellFormula).IsEqualTo("SUM(C2:C3)");
-            Check.That(row3.Cells[3].CellFormula).IsEqualTo("D2+D3");
-            Check.That(row3.Cells[4].CellFormula).IsEqualTo("SUM(E2:E3)");
-            Check.That(row3.Cells[5].CellFormula).IsEqualTo("AVERAGE(F2:F3)");
+            SharedAssertions.Assert_Matrix_Cells_Lookup_On_A_Single_Matrix(filename);
         }
 
         [Fact]
@@ -575,9 +528,9 @@ namespace Xsheet.Tests
             var finalTotalStyle = _workbook.CreateCellStyle();
             finalTotalStyle.FillPattern = FillPattern.SolidForeground;
             finalTotalStyle.FillForegroundColor = IndexedColors.LightOrange.Index;
-
-            Matrix m1 = MatrixCellLookup(1, finalTotalStyle);
-            Matrix m2 = MatrixCellLookup(2, finalTotalStyle);
+            var format = new NPOIFormat { CellStyle = finalTotalStyle };
+            Matrix m1 = MatrixDatasets.Given_MatrixWithCellLookup(1, format);
+            Matrix m2 = MatrixDatasets.Given_MatrixWithCellLookup(2, format);
             Matrix m3 = m1.ConcatX(m2);
 
             // WHEN
@@ -618,71 +571,6 @@ namespace Xsheet.Tests
             Check.That(row3.Cells[11].CellFormula).IsEqualTo("AVERAGE(L2:L3)");
         }
 
-        static Matrix MatrixCellLookup(int index, ICellStyle finalTotalStyle)
-        {
-            const string Playername = "Playername";
-            const string Score1 = "Score1";
-            const string Score2 = "Score2";
-            const string Score3 = "Score3";
-            const string Total = "Total";
-            const string Mean = "Mean";
-            const string FinalTotal = "FinalTotal";
-
-            return Matrix.With().Key(index: index)
-                            .Cols(new List<ColumnDefinition> {
-                    new ColumnDefinition { Name = Playername, Label = "Player name" },
-                    new ColumnDefinition { Name = Score1, Label = "Score 1", DataType = DataTypes.Number },
-                    new ColumnDefinition { Name = Score2, Label = "Score 2", DataType = DataTypes.Number },
-                    new ColumnDefinition { Name = Score3, Label = "Score 3", DataType = DataTypes.Number },
-                    new ColumnDefinition { Name = Total, Label = "Total", DataType = DataTypes.Number },
-                    new ColumnDefinition { Name = Mean, Label = "Mean", DataType = DataTypes.Number },
-                            })
-                            .Rows(new List<RowDefinition> {
-                    new RowDefinition {
-                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>> {
-                            { Total, (mat, cell) => {
-                                var row = mat.Row(cell);
-                                return Convert.ToDouble(row.Col(Score1).Value)
-                                + Convert.ToDouble(row.Col(Score2).Value)
-                                + Convert.ToDouble(row.Col(Score3).Value);
-                            }},
-                            { Mean, (mat, cell) => {
-                                var row = mat.Row(cell);
-                                return $"=AVERAGE({row.Col(Score1).Value},{row.Col(Score2).Value},{row.Col(Score3).Value})";
-                            } },
-                        }
-                    },
-                    new RowDefinition {
-                        Key = FinalTotal,
-                        DefaultCellFormat = new NPOIFormat { CellStyle = finalTotalStyle },
-                        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
-                        {
-                            { Playername, (mat, cell) => "TOTAL" },
-                            { Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum() },
-                            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Score2).Address})" },
-                            { Score3, (mat, cell) => {
-                                var adresses = mat.Col(cell).Cells.SkipLast(1).Select(c => c.Address);
-                                var formula = string.Join('+', adresses);
-                                return $"={formula}";
-                            }},
-                            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Total).Address})" },
-                            { Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.Row(cell, cell.RowIndex - 1).Col(Mean).Address})" },
-                        }
-                    },
-                            })
-                            .RowValues(new List<RowValue>
-                            {
-                    new RowValue { ValuesByColName = new Dictionary<string, object> {
-                        { Playername, "Mario" }, { Score1, 10 }, { Score2, 20 }, { Score3, 30 }
-                    } },
-                    new RowValue { ValuesByColName = new Dictionary<string, object> {
-                        { Playername, "Luigi" }, { Score1, 12 }, { Score2, 23 }, { Score3, 34 }
-                    } },
-                    new RowValue { Key = FinalTotal }
-                            })
-                            .Build();
-        }
-
         private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)
         {
             var readSheet = readWb.GetSheetAt(sheetIndex);
@@ -701,7 +589,7 @@ namespace Xsheet.Tests
             WriteDebugFile(_defaultFormatApplier, mat, fileName);
         }
 
-        private string WriteDebugFile(FormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null)
+        private string WriteDebugFile(IFormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null)
         {
             return TestUtils.WriteDebugFile(formatApplier, mat, filename, wb, _fileStreamToClose);
         }

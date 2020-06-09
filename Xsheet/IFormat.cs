@@ -1,6 +1,6 @@
 ﻿namespace Xsheet
 {
-    public interface Format
+    public interface IFormat
     {
     }
 }
