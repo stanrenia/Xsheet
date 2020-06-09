@@ -3,9 +3,9 @@ using Xsheet;
 
 namespace XSheet.Renderers.Formats
 {
-    public interface FormatApplier
+    public interface IFormatApplier
     {
         void ApplyFormatToCell(IWorkbook wb, RowDefinition defaultRowDef, RowDefinition rowDef, int columnIndex, ICell cell);
-        void ApplyFormatToCell(IWorkbook wb, ICell cell, Format format);
+        void ApplyFormatToCell(IWorkbook wb, ICell cell, IFormat format);
     }
 }

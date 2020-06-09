@@ -20,6 +20,6 @@
         public DataTypes DataType { get; set; } = DataTypes.Text;
         public string Name { get; set; }
         public int Index { get; internal set; } = UNDEFINED_INDEX_VALUE;
-        public Format HeaderCellFormat { get; set; }
+        public IFormat HeaderCellFormat { get; set; }
     }
 }

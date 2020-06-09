@@ -4,7 +4,7 @@ using Xsheet;
 
 namespace XSheet.Renderers.Formats
 {
-    public class BasicFormat : Format
+    public class BasicFormat : IFormat
     {
         public string FontStyle { get; set; }
         public string BackgroundColor { get; set; }

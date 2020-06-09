@@ -6,8 +6,8 @@ using Xsheet;
 
 namespace XSheet.Renderers.Formats
 {
-    public abstract class BaseFormatApplier<T> : FormatApplier
-        where T : class, Format
+    public abstract class BaseFormatApplier<T> : IFormatApplier
+        where T : class, IFormat
     {
         /// <summary>
         /// Add the following Formats in order, then call MergeFormats()
@@ -20,7 +20,7 @@ namespace XSheet.Renderers.Formats
         public void ApplyFormatToCell(IWorkbook wb, RowDefinition defaultRowDef, RowDefinition rowDef, int columnIndex, ICell cell)
         {
             var formats = new List<T>();
-            void AddFormatIfNotNull(Format f)
+            void AddFormatIfNotNull(IFormat f)
             {
                 if (f != null && f is T nPOIFormat)
                 {
@@ -29,10 +29,10 @@ namespace XSheet.Renderers.Formats
             }
 
             AddFormatIfNotNull(defaultRowDef.DefaultCellFormat);
-            defaultRowDef.FormatsByColIndex.TryGetValue(columnIndex, out Format defaultColFormat);
+            defaultRowDef.FormatsByColIndex.TryGetValue(columnIndex, out IFormat defaultColFormat);
             AddFormatIfNotNull(defaultColFormat);
             AddFormatIfNotNull(rowDef.DefaultCellFormat);
-            rowDef.FormatsByColIndex.TryGetValue(columnIndex, out Format colFormat);
+            rowDef.FormatsByColIndex.TryGetValue(columnIndex, out IFormat colFormat);
             AddFormatIfNotNull(colFormat);
 
             var mergedFormat = MergeFormats(formats);
@@ -45,7 +45,7 @@ namespace XSheet.Renderers.Formats
 
         public abstract void ApplyFormatToCell(IWorkbook wb, ICell cell, T format);
 
-        public void ApplyFormatToCell(IWorkbook wb, ICell cell, Format format)
+        public void ApplyFormatToCell(IWorkbook wb, ICell cell, IFormat format)
         {
             if (format != null)
             {

@@ -187,7 +187,7 @@ namespace Xsheet.Tests
                 .Select(i => new RowDefinition
                 {
                     Key = $"R{i}",
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { "Col1", new BasicFormat { FontSize = 10 } },
                         { "Col2", new BasicFormat { FontSize = 11 } }
                     }
@@ -199,7 +199,7 @@ namespace Xsheet.Tests
                 .Select(i => new RowDefinition
                 {
                     Key = $"R{i}",
-                    FormatsByColName = new Dictionary<string, Format> {
+                    FormatsByColName = new Dictionary<string, IFormat> {
                         { "Col1", new BasicFormat { FontSize = 20 } },
                         { "Col2", new BasicFormat { FontSize = 21 } },
                         { "Col3", new BasicFormat { FontSize = 22 } }

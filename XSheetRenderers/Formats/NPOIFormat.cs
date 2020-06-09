@@ -3,7 +3,7 @@ using Xsheet;
 
 namespace XSheet.Renderers.Formats
 {
-    public class NPOIFormat : Format
+    public class NPOIFormat : IFormat
     {
         public ICellStyle CellStyle { get; set; }
     }
