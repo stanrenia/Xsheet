@@ -21,8 +21,10 @@ namespace Xsheet.Tests
             var values = new List<RowValue>
             {
                 new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
-                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
-                new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+                new RowValue { Key = "ROW_1", ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
+                new RowValue { Key = "ROW_2", ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
+                new RowValue { Key = "ROW_3", ValuesByColName = new Dictionary<string, object>{ { "colA", 44 }, { "colB", 77 } } },
+                new RowValue { Key = "ROW_4", ValuesByColName = new Dictionary<string, object>{ { "colA", 55 }, { "colB", 88 } } },
             };
 
             IFormat format = null;
@@ -38,11 +40,12 @@ namespace Xsheet.Tests
                     .Add("colD", "I'm D")
                     .Continue()
                 .Rows()
-                    .Add("ROW_1", format)
+                    .Add(key: "ROW_1", defaultCellFormat: format)
                     .Add(new RowDefinition { Key = "ROW_2", DefaultCellFormat = format, FormatsByColName = null, ValuesMapping = null })
-                    .Add("ROW_3", format)
-                        .WithFormats()
-                        .Add("colA", format)
+                        .AddFormat("ROW_3", format)
+                        .AddValueMap("colB", (mat, cell) => "BBB")
+                    .Add("ROW_4", format)
+                    .Continue()
                 .RowValues(values)
                 .Build();
 

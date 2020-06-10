@@ -82,9 +82,12 @@ namespace Xsheet
 
     public interface IRowsBuilder
     {
-        IRowsBuilder Add(string key = null, IFormat defaultCellFormat = null, Dictionary<string, IFormat> formatsByColName = null,
-            Dictionary<string, Func<Matrix, MatrixCellValue, object>> valuesMapping = null);
-        IRowBuilder Add(string key = null, IFormat defaultCellFormat = null);
+        //IRowsBuilder Add(string key = null, IFormat defaultCellFormat = null, Dictionary<string, IFormat> formatsByColName = null,
+        //    Dictionary<string, Func<Matrix, MatrixCellValue, object>> valuesMapping = null);
+        IRowsBuilder Add(string key = null, IFormat defaultCellFormat = null);
+        IRowsBuilder Add(params RowDefinition[] rowDefinitions);
+        IRowsBuilder AddValueMap(string colName, Func<Matrix, MatrixCellValue, object> func);
+        IRowsBuilder AddFormat(string colName, IFormat format);
         IMatrixBuilder Continue();
     }
 
