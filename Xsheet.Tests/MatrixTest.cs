@@ -206,28 +206,6 @@ namespace Xsheet.Tests
             Check.That(cells.Extracting(nameof(MatrixCellValue.Address))).ContainsExactly("A2", "B2", "A3", "B3", "A4", "B4");
         }
 
-        //[Fact]
-        //public void Should_Get_Row_From_Cell()
-        //{
-        //    // GIVEN
-        //    var values = new List<RowValue>
-        //    {
-        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 11 }, { "colB", 44 } } },
-        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 22 }, { "colB", 55 } } },
-        //        new RowValue { ValuesByColName = new Dictionary<string, object>{ { "colA", 33 }, { "colB", 66 } } },
-        //    };
-
-        //    var mat = Matrix.With()
-        //        .RowValues(values)
-        //        .Build();
-
-        //    // WHEN
-        //    RowCellReader row = mat.Row(values[0].Cells.ElementAt(0));
-
-        //    // THEN
-        //    Check.That(row.Col().IsEqualTo(values[0]);
-        //}
-
         [Fact]
         public void Should_Get_Col_From_Row()
         {
