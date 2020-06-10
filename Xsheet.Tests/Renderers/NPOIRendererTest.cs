@@ -8,8 +8,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using Xsheet.Tests.SharedDatasets;
-using XSheet.Renderers;
-using XSheet.Renderers.Formats;
+using XSheet.Renderers.NPOI;
+using XSheet.Renderers.NPOI.Formats;
 using Xunit;
 
 namespace Xsheet.Tests

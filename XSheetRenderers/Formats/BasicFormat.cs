@@ -2,7 +2,7 @@
 using System.Linq;
 using Xsheet;
 
-namespace XSheet.Renderers.Formats
+namespace XSheet.Renderers.NPOI.Formats
 {
     public class BasicFormat : IFormat
     {

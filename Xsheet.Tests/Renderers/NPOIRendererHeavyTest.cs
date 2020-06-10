@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using XSheet.Renderers.Formats;
+using XSheet.Renderers.NPOI.Formats;
 using Xunit;
 
 namespace Xsheet.Tests

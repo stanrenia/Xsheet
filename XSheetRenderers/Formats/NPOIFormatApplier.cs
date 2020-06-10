@@ -1,6 +1,6 @@
 ﻿using NPOI.SS.UserModel;
 
-namespace XSheet.Renderers.Formats
+namespace XSheet.Renderers.NPOI.Formats
 {
     public class NPOIFormatApplier : BaseFormatApplier<NPOIFormat>
     {

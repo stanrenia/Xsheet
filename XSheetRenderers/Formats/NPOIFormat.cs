@@ -1,7 +1,7 @@
 ﻿using NPOI.SS.UserModel;
 using Xsheet;
 
-namespace XSheet.Renderers.Formats
+namespace XSheet.Renderers.NPOI.Formats
 {
     public class NPOIFormat : IFormat
     {

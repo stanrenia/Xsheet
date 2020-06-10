@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xsheet;
 
-namespace XSheet.Renderers.Formats
+namespace XSheet.Renderers.NPOI.Formats
 {
     public abstract class BaseFormatApplier<T> : IFormatApplier
         where T : class, IFormat

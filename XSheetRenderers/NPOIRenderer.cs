@@ -3,9 +3,9 @@ using System;
 using System.IO;
 using System.Linq;
 using Xsheet;
-using XSheet.Renderers.Formats;
+using XSheet.Renderers.NPOI.Formats;
 
-namespace XSheet.Renderers
+namespace XSheet.Renderers.NPOI
 {
     public class NPOIRenderer : IMatrixRenderer
     {

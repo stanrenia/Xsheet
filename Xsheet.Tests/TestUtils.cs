@@ -4,9 +4,8 @@ using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using XSheet.Renderers;
 using XSheet.Renderers.ClosedXml;
-using XSheet.Renderers.Formats;
+using XSheet.Renderers.NPOI;
 
 namespace Xsheet.Tests
 {
@@ -23,7 +22,7 @@ namespace Xsheet.Tests
             wb.Write(fs);
         }
        
-        public static string WriteDebugFile(XSheet.Renderers.Formats.IFormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null, List<Stream> streamsToClose = null)
+        public static string WriteDebugFile(XSheet.Renderers.NPOI.Formats.IFormatApplier formatApplier, Matrix mat, string filename, IWorkbook wb = null, List<Stream> streamsToClose = null)
         {
             if (wb is null)
             {

@@ -2,7 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using XSheet.Renderers;
+using XSheet.Renderers.OpenXml;
+
 using Xunit;
 
 namespace Xsheet.Tests

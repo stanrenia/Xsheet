@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Xsheet;
 
-namespace XSheet.Renderers.Formats
+namespace XSheet.Renderers.NPOI.Formats
 {
     public class BasicFormatApplier : BaseFormatApplier<BasicFormat>
     {

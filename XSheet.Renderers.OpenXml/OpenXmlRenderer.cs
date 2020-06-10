@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using Xsheet;
 
-namespace XSheet.Renderers
+namespace XSheet.Renderers.OpenXml
 {
     public class OpenXmlRenderer : IMatrixRenderer
     {
