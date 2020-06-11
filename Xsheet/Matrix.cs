@@ -31,7 +31,7 @@ namespace Xsheet
                         throw new ArgumentNullException($"{nameof(ColumnDefinition)}.{nameof(ColumnDefinition.Name)} cannot be null");
                     }
 
-                    _columnsDefinitions = value;
+                    _columnsDefinitions = value.ToList();
 
                     var colsWithIndex = _columnsDefinitions
                         .Select((col, i) =>
@@ -62,7 +62,7 @@ namespace Xsheet
             {
                 if (value != null)
                 {
-                    _rowsDefinitions = value;
+                    _rowsDefinitions = value.ToList();
                     _rowsDefinitionsByKey = _rowsDefinitions
                         .ToDictionary(row => row.Key, row => row);
 
@@ -131,7 +131,7 @@ namespace Xsheet
 
         private Matrix() { }
 
-        public static MatrixBuilder With() => new MatrixBuilder();
+        public static IMatrixBuilder With() => new Builder();
 
         // TODO What to do if rows defs contains same Key ?
         // -- May allow to define the behaviour like: 
@@ -331,93 +331,136 @@ namespace Xsheet
             return new RowDefinition { Key = RowDefinition.DEFAULT_KEY };
         }
 
-        public class MatrixBuilder
+        public class Builder : IMatrixBuilder, IColsBuilder, IRowsBuilder
         {
-            private MatrixKey _key;
-            private int CountOfRows;
-            private int CountOfCols;
-            private List<ColumnDefinition> ColumnsDefinition;
-            private List<RowDefinition> RowsDefinition;
-            private List<RowValue> _rowValues;
+            private List<ColumnDefinition> _cols = new List<ColumnDefinition>();
+            private List<RowDefinition> _rows = new List<RowDefinition>();
+            private List<RowValue> _values = new List<RowValue>();
+            private int _countOfCols;
+            private int _countOfRows;
             private bool _withHeadersRow = true;
+            private MatrixKey _key;
 
-            public MatrixBuilder Key(MatrixKey key)
-            {
-                _key = key;
-                return this;
-            }
-            public MatrixBuilder Key(string key = "", int index = 0)
+            public static Builder New => new Builder();
+          
+            public IMatrixBuilder Key(string key = "", int index = 0)
             {
                 _key = new MatrixKey(key, index);
                 return this;
             }
 
-
-            public MatrixBuilder Dimensions(int rowsCount, int colsCount)
+            public IMatrixBuilder Dimensions(int rowsCount, int colsCount)
             {
-                CountOfRows = rowsCount;
-                CountOfCols = colsCount;
+                _countOfRows = rowsCount;
+                _countOfCols = colsCount;
                 return this;
             }
 
-            public MatrixBuilder RowsCount(int rowsCount)
+            public IMatrixBuilder RowsCount(int rowsCount)
             {
-                CountOfRows = rowsCount;
+                _countOfRows = rowsCount;
                 return this;
             }
 
-            public MatrixBuilder ColsCount(int colsCount)
+            public IMatrixBuilder ColsCount(int colsCount)
             {
-                CountOfCols = colsCount;
+                _countOfCols = colsCount;
                 return this;
             }
 
-            public MatrixBuilder Cols(List<ColumnDefinition> cols)
+            public IColsBuilder Cols()
             {
-                ColumnsDefinition = cols;
-                if (CountOfCols < cols.Count)
+                return this;
+            }
+
+            public IMatrixBuilder Cols(List<ColumnDefinition> cols)
+            {
+                _cols = cols;
+                return this;
+            }
+
+            public IColsBuilder Col(string name = null, string label = null, DataTypes dataType = DataTypes.Text, IFormat headerCellFormat = null)
+            {
+                _cols.Add(new ColumnDefinition
                 {
-                    CountOfCols = cols.Count;
-                }
+                    Name = name,
+                    Label = label,
+                    DataType = dataType,
+                    HeaderCellFormat = headerCellFormat
+                });
                 return this;
             }
 
-            public MatrixBuilder Rows(List<RowDefinition> rows)
+            public IRowsBuilder Rows()
             {
-                RowsDefinition = rows;
                 return this;
             }
 
-            public MatrixBuilder RowValues(List<RowValue> values)
+            public IMatrixBuilder Rows(List<RowDefinition> rows)
             {
-                _rowValues = values;
-                var maxColCount = values.Max(rowValue => rowValue.ValuesByColName.Keys.Count);
-                if (CountOfCols < maxColCount)
+                _rows = rows;
+                return this;
+            }
+
+            public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
+            {
+                _rows.Add(MakeRowDefinition(key, defaultCellFormat));
+                return new RowBuilder(this);
+            }
+
+            private RowDefinition MakeRowDefinition(string key, IFormat defaultCellFormat)
+            {
+                return new RowDefinition
                 {
-                    CountOfCols = maxColCount;
-                }
-                if (CountOfRows < values.Count)
-                {
-                    CountOfRows = values.Count;
-                }
+                    Key = key is null ? RowDefinition.DEFAULT_KEY : key,
+                    DefaultCellFormat = defaultCellFormat
+                };
+            }
+            
+            public IMatrixBuilder RowValues(IEnumerable<RowValue> rowValues)
+            {
+                _values = rowValues.ToList();
+                return this;
+            }
+
+            public IMatrixBuilder WithoutHeadersRow()
+            {
+                _withHeadersRow = false;
                 return this;
             }
 
             public Matrix Build()
             {
-                var validator = new Validator();
-                var mat = new Matrix
+                if (_values.Count > 0)
                 {
+                    var maxColCount = _values.Max(rowValue => rowValue.ValuesByColName.Keys.Count);
+                    if (_countOfCols < maxColCount)
+                    {
+                        _countOfCols = maxColCount;
+                    }
+                }
+
+                if (_countOfRows < _values.Count)
+                {
+                    _countOfRows = _values.Count;
+                }
+
+                if (_countOfCols < _cols.Count)
+                {
+                    _countOfCols = _cols.Count;
+                }
+
+                var mat = new Matrix {
                     Key = _key,
+                    CountOfColumns = _countOfCols,
+                    CountOfRows = _countOfRows,
                     WithHeadersRow = _withHeadersRow,
-                    CountOfRows = CountOfRows,
-                    CountOfColumns = CountOfCols,
-                    ColumnsDefinitions = ColumnsDefinition,
-                    RowsDefinitions = RowsDefinition,
-                    RowValues = _rowValues
+                    ColumnsDefinitions = _cols,
+                    RowsDefinitions = _rows,
+                    RowValues = _values
                 };
 
-                var results = validator.Validate(mat);
+                var results = new Validator().Validate(mat);
                 if (!results.IsValid)
                 {
                     var err = results.Errors.First();
@@ -427,19 +470,53 @@ namespace Xsheet
                 return mat;
             }
 
-            public MatrixBuilder WithoutHeadersRow()
+            protected class RowBuilder : IRowBuilder
             {
-                _withHeadersRow = false;
-                return this;
-            }
+                private readonly Builder _builder;
 
-            protected class Validator : AbstractValidator<Matrix>
-            {
-                public Validator()
+                public RowBuilder(Builder builder)
                 {
-                    RuleFor(m => m.CountOfRows).GreaterThan(0);
-                    RuleFor(m => m.CountOfColumns).GreaterThan(0);
+                    _builder = builder;
                 }
+
+                public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
+                {
+                    _builder._rows.Add(_builder.MakeRowDefinition(key, defaultCellFormat));
+                    return this;
+                }
+
+                public IRowBuilder Format(string colName, IFormat format)
+                {
+                    var rowDef = _builder._rows.Last();
+                    rowDef.FormatsByColName.Add(colName, format);
+                    return this;
+                }
+
+                public IRowBuilder ValueMap(string colName, Func<Matrix, MatrixCellValue, object> func)
+                {
+                    var rowDef = _builder._rows.Last();
+                    rowDef.ValuesMapping.Add(colName, func);
+                    return this;
+                }
+
+                public IMatrixBuilder RowValues(IEnumerable<RowValue> rowValues)
+                {
+                    return _builder.RowValues(rowValues);
+                }
+
+                public Matrix Build()
+                {
+                    return _builder.Build();
+                }
+            }
+        }
+
+        protected class Validator : AbstractValidator<Matrix>
+        {
+            public Validator()
+            {
+                RuleFor(m => m.CountOfRows).GreaterThan(0);
+                RuleFor(m => m.CountOfColumns).GreaterThan(0);
             }
         }
     }

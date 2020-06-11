@@ -1,12 +1,11 @@
-using DocumentFormat.OpenXml.Drawing.Charts;
 using NFluent;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
+using Xsheet.Formats;
 using Xsheet.Tests.SharedDatasets;
 using XSheet.Renderers.NPOI;
 using XSheet.Renderers.NPOI.Formats;
@@ -107,18 +106,18 @@ namespace Xsheet.Tests
             var ColorLightGreyIndex = IndexedColors.Grey25Percent.Index;
             var rows = new List<RowDefinition>
             {
-                new RowDefinition { 
-                    DefaultCellFormat = new BasicFormat { FontSize = 12 }, 
+                new RowDefinition {
+                    DefaultCellFormat = new BasicFormat { FontSize = 12 },
                     FormatsByColName = new Dictionary<string, IFormat> {
                         { Lastname, new BasicFormat { FontStyle = FontStyle.Bold } },
                         { Age, new BasicFormat { BackgroundColor = ColorLightGreyIndex.ToString() } }
                     }
                 },
-                new RowDefinition { 
-                    Key = Odd, 
+                new RowDefinition {
+                    Key = Odd,
                     FormatsByColName = new Dictionary<string, IFormat> {
                         { Age, new BasicFormat { BackgroundColor = ColorBlueIndex.ToString() } }
-                    } 
+                    }
                 },
             };
 
@@ -246,7 +245,7 @@ namespace Xsheet.Tests
 
             var ColorBlueIndex = IndexedColors.LightBlue.Index;
             var ColorLightGreyIndex = IndexedColors.Grey25Percent.Index;
-            
+
             var style4 = _workbook.CreateCellStyle();
             style4.CloneStyleFrom(style2);
             style4.FillPattern = FillPattern.SolidForeground;
@@ -369,7 +368,7 @@ namespace Xsheet.Tests
         public void Should_Help_To_Debug_NPOIFormat()
         {
             var wb = new XSSFWorkbook();
-            
+
             short colorBlack = IndexedColors.Black.Index;
             short colorLightBlue = IndexedColors.LightBlue.Index;
             short colorLightOrange = IndexedColors.LightOrange.Index;
