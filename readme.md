@@ -10,7 +10,7 @@
 ![Advanced example screenshot](https://github.com/stanrenia/Xsheet/blob/master/Screenshots/capt2.PNG)
 
 ```csharp
-Matrix.With()
+var mat = Matrix.With()
 // Columns definitions
 .Cols()
     // ColumnDefinition: Defines Column Name, Label (displayed text) and cells values types
@@ -70,7 +70,7 @@ Matrix.With()
 // Here we passe the values for each row
 // For demonstration purpose, we create the values right here
 // However, it's preferable to transform your business data to a list of RowValue
-// before, as it could be complexed.
+// before, as it could be complex.
 .RowValues(new List<RowValue> {
     // Mario and Luigi rows will get the default RowDefinition
     new RowValue { ValuesByColName = new Dictionary<string, object> {
