@@ -7,9 +7,11 @@
 
 ## See various examples at ```Xsheet.Tests/Renderers/*.cs```
 ### Advanced example
-![advanced example screenshot](Screenshots/capt2.png)
+<figure>
+    <img src="Screenshots/capt2.png">
+    <figcaption>Advanced example screenshot</figcaption>
+</figure>
 
-Code : 
 
 ```csharp
 Matrix.With()
@@ -100,7 +102,11 @@ using (var fs = File.Create("report.xlsx"))
 ### Styling
 With ```NPOIFormat```
 
-![styling with NPOIFormat screenshot](Screenshots/capt1.png)
+<figure>
+    <img src="Screenshots/capt1.png">
+    <figcaption>styling with NPOIFormat screenshot</figcaption>
+</figure>
+
 ```csharp
 var _workbook = new XSSFWorkbook();
 
