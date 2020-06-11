@@ -1,6 +1,6 @@
 ﻿using NFluent;
 using System.Collections.Generic;
-using XSheet.Renderers.NPOI.Formats;
+using Xsheet.Formats;
 using Xunit;
 
 namespace Xsheet.Tests

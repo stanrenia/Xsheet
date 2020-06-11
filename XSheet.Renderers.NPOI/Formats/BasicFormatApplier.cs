@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Xsheet;
+using Xsheet.Formats;
 
 namespace XSheet.Renderers.NPOI.Formats
 {

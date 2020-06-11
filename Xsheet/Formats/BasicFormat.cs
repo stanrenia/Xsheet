@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Xsheet;
 
-namespace XSheet.Renderers.NPOI.Formats
+namespace Xsheet.Formats
 {
     public class BasicFormat : IFormat
     {

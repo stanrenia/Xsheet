@@ -1,9 +1,8 @@
 ﻿using NFluent;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using XSheet.Renderers.NPOI.Formats;
+using Xsheet.Formats;
 using Xunit;
 
 namespace Xsheet.Tests
@@ -244,8 +243,8 @@ namespace Xsheet.Tests
         public void Should_Throw_Exception_When_Conact_RowDefinitions_With_Same_Key_And_Strategy_Is_RaiseError()
         {
             // GIVEN
-            var colDefs = Enumerable.Range(1, 3).Select(col => new ColumnDefinition{Name = $"Col{col}"}).ToList();
-            var colDefs2 = Enumerable.Range(1, 3).Select(col => new ColumnDefinition{Name = $"Col{col}"}).ToList();
+            var colDefs = Enumerable.Range(1, 3).Select(col => new ColumnDefinition { Name = $"Col{col}" }).ToList();
+            var colDefs2 = Enumerable.Range(1, 3).Select(col => new ColumnDefinition { Name = $"Col{col}" }).ToList();
 
             var rowDefs = Enumerable.Range(1, 2).Select(i => new RowDefinition { Key = $"R{i}" }).ToList();
             var rowDefs2 = Enumerable.Range(1, 2).Select(i => new RowDefinition { Key = $"R{i}" }).ToList();

@@ -7,64 +7,72 @@
 
 ## See various examples at ```Xsheet.Tests/Renderers/*.cs```
 ### Advanced example
-![advanced example screenshot](./Screenshots/capt2.png)
+![advanced example screenshot](Screenshots/capt2.png)
+
+Code : 
+
 ```csharp
 Matrix.With()
-.Cols(new List<ColumnDefinition> {
-    new ColumnDefinition { Name = Playername, Label = "Player name" },
-    new ColumnDefinition { Name = Score1, Label = "Score 1", DataType = DataTypes.Number },
-    new ColumnDefinition { Name = Score2, Label = "Score 2", DataType = DataTypes.Number },
-    new ColumnDefinition { Name = Score3, Label = "Score 3", DataType = DataTypes.Number },
-    new ColumnDefinition { Name = Total, Label = "Total", DataType = DataTypes.Number },
-    new ColumnDefinition { Name = Mean, Label = "Mean", DataType = DataTypes.Number },
-})
-.Rows(new List<RowDefinition> {
-    // This RowDefinition is the default since 'Key' is not defined (null)
+// Columns definitions
+.Cols()
+    // ColumnDefinition: Defines Column Name, Label (displayed text) and cells values types
+    // Name property is used as a reference in RowDefinition and RowValue classes
+    .Col(Playername, "Player name")
+    .Col(Score1, "Score 1", DataTypes.Number)
+    .Col(Score2, "Score 2", DataTypes.Number)
+    .Col(Score3, "Score 3", DataTypes.Number)
+    .Col(Total, "Total", DataTypes.Number)
+    .Col(Mean, "Mean", DataTypes.Number)
+// Rows definitions
+.Rows()
+    // RowDefinition: Defines how to render cells (their values and styles) for RowValues having the same Key as the row definition.
+    // Below, the RowDefinition is the default since 'Key' is not defined (null)
     // By default, each RowValue will get this RowDefinition
-    new RowDefinition {
-        // ValuesMapping lets you define Cells values by accessing the whole Matrix
-        // Here we define Total and Mean columns
-        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>> {
-            // 1) Compute the SUM at runtime using C#
-            // As Value is of type object, we have to convert it.
-            { Total, (mat, cell) => {
-                var row = mat.Row(cell);
-                return Convert.ToDouble(row.Col(Score1).Value)
-                + Convert.ToDouble(row.Col(Score2).Value)
-                + Convert.ToDouble(row.Col(Score3).Value);
-            }},
-            // 2) Define a formula using Cells values. Eg: =AVERAGE(10,20,30)
-            { Mean, (mat, cell) => {
-                var row = mat.Row(cell);
-                return $"=AVERAGE({row.Col(Score1).Value},{row.Col(Score2).Value},{row.Col(Score3).Value})";
-            } },
-        }
-    },
-    // We add another RowDefinition representing the final row (at the bottom)
-    // It's a summary row, so we're doing SUM and AVERAGE operations, in various ways
-    new RowDefinition {
-        Key = FinalTotal, // Set the Key since it's not the default RowDefinition
-        DefaultCellFormat = format, // Some styling
-        ValuesMapping = new Dictionary<string, Func<Matrix, MatrixCellValue, object>>
+    .Row()
+        // ValuesMapping property lets you define Cells values by accessing the whole Matrix
+        // For this row, we define Total and Mean columns
+        // .ValueMap() is a shortcut method reducing the boilerplate of Dictionnary instanciation
+        
+        // 1) Compute the SUM at runtime using C#
+        // As Value is of type object, we have to convert it.
+        // Note: this is only for demonstration purpose, it's preferable to compute it before
+        .ValueMap(Total, (mat, cell) =>
         {
-            // 3) Set the value to "TOTAL"
-            { Playername, (mat, cell) => "TOTAL" },
-            // 4) Compute the SUM of column Score1, at runtime
-            { Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum() },
-            // 5) Define the SUM of column Score2 using Excel's SUM formula with Cells Addresses
-            // FROM the top 1st row TO the row above the current 'FinalTotal' row
-            { Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Score2).Address})" },
-            // 6) Excel's custom formula Eg: =D2+D3+D4
-            { Score3, (mat, cell) => {
-                return $"={mat.Col(cell).Cells.SkipLast(1).Addresses("+")}";
-            }},
-            // 7) Same as 5)
-            { Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Total).Address})" },
-            // 8) Using AVERAGE formula
-            { Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Mean).Address})" },
-        }
-    },
-})
+            var row = mat.Row(cell);
+            return Convert.ToDouble(row.Col(Score1).Value)
+            + Convert.ToDouble(row.Col(Score2).Value)
+            + Convert.ToDouble(row.Col(Score3).Value);
+        })
+        // 2) Define a formula using Cells values. Eg: =AVERAGE(10,20,30)
+        .ValueMap(Mean, (mat, cell) =>
+        {
+            var row = mat.Row(cell);
+            return $"=AVERAGE({row.Col(Score1).Value},{row.Col(Score2).Value},{row.Col(Score3).Value})";
+        })
+    // We add another RowDefinition representing the final row (at the bottom)
+    // It's a summary row, so we're doing SUM and AVERAGE operations
+    // For demonstration purpose, we write theses operations in various ways
+    // Below, we set the Key to 'FinalTotal' since it's not the default RowDefinition
+    // Also we set some styling with 'format'
+    .Row(FinalTotal, format)
+        // 3) Set the value to "TOTAL"
+        .ValueMap(Playername, (mat, cell) => "TOTAL")
+        // 4) Compute the SUM of column Score1, at runtime
+        .ValueMap(Score1, (mat, cell) => mat.Col(cell).Values.Select(v => Convert.ToDouble(v)).Sum())
+        // 5) Define the SUM of column Score2 using Excel's SUM formula with Cells Addresses
+        // FROM the top 1st row TO the row above the current 'FinalTotal' row
+        .ValueMap(Score2, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Score2).Address})")
+        // 6) Excel's custom formula Eg: =D2+D3+D4
+        .ValueMap(Score3, (mat, cell) => $"={mat.Col(cell).Cells.SkipLast(1).Addresses("+")}")
+        // 7) Same as 5)
+        .ValueMap(Total, (mat, cell) => $"=SUM({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Total).Address})")
+        // 8) Using AVERAGE formula
+        .ValueMap(Mean, (mat, cell) => $"=AVERAGE({mat.Col(cell).Cells[0].Address}:{mat.RowAbove(cell).Col(Mean).Address})")
+
+// Here we passe the values for each row
+// For demonstration purpose, we create the values right here
+// However, it's preferable to transform your business data to a list of RowValue
+// before, as it could be complexed.
 .RowValues(new List<RowValue> {
     // Mario and Luigi rows will get the default RowDefinition
     new RowValue { ValuesByColName = new Dictionary<string, object> {
@@ -78,13 +86,24 @@ Matrix.With()
     new RowValue { Key = FinalTotal }
 })
 .Build();
+
+// Generate the Excel file - using NPOI
+var wb = new XSSFWorkbook();
+
+using (var fs = File.Create("report.xlsx")) 
+{
+    var rd = new NPOIRenderer(wb, new NPOIFormatApplier());
+    rd.GenerateExcelFile(mat, fs);
+}
 ```
 
 ### Styling
 With ```NPOIFormat```
 
-![styling with NPOIFormat screenshot](./Screenshots/capt1.png)
+![styling with NPOIFormat screenshot](Screenshots/capt1.png)
 ```csharp
+var _workbook = new XSSFWorkbook();
+
 // Use your own methods in order to share Fonts
 // Because NPOI method IFont.CloneStyleFrom(IFont) is not working as expected
 IFont Font1()
