@@ -172,7 +172,7 @@ namespace Xsheet.Tests
                     new ColumnDefinition { Name = "Week", Label = "Week", DataType = DataTypes.Text },
                     new ColumnDefinition { Name = "Score1", Label = "Score 1", DataType = DataTypes.Number },
                     new ColumnDefinition { Name = "Var1", Label = "Score1/Score3", DataType = DataTypes.Number },
-                    new ColumnDefinition { Name = "Score2", Label = "Score 1", DataType = DataTypes.Number },
+                    new ColumnDefinition { Name = "Score2", Label = "Score 2", DataType = DataTypes.Number },
                     new ColumnDefinition { Name = "Var2", Label = "Score2/Score3", DataType = DataTypes.Number },
                     new ColumnDefinition { Name = "Score3", Label = "Score 3", DataType = DataTypes.Number }
                 })

@@ -27,14 +27,12 @@ namespace Xsheet
     public interface IColsBuilder : IRowValuesBuilder
     {
         IColsBuilder Col(string name = null, string label = null, DataTypes dataType = DataTypes.Text, IFormat headerCellFormat = null);
-        //IColsBuilder Col(params ColumnDefinition[] columnDefinitions);
         IRowsBuilder Rows();
     }
 
     public interface IRowsBuilder : IRowValuesBuilder
     {
         IRowBuilder Row(string key = null, IFormat defaultCellFormat = null);
-        //IRowBuilder Row(params RowDefinition[] rowDefinitions);
     }
 
     public interface IRowBuilder : IRowsBuilder

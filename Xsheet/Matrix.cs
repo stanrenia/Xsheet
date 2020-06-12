@@ -331,7 +331,7 @@ namespace Xsheet
             return new RowDefinition { Key = RowDefinition.DEFAULT_KEY };
         }
 
-        public class Builder : IMatrixBuilder, IColsBuilder, IRowsBuilder
+        public class Builder : IMatrixBuilder, IColsBuilder, IRowsBuilder, IRowBuilder
         {
             private List<ColumnDefinition> _cols = new List<ColumnDefinition>();
             private List<RowDefinition> _rows = new List<RowDefinition>();
@@ -341,8 +341,6 @@ namespace Xsheet
             private bool _withHeadersRow = true;
             private MatrixKey _key;
 
-            public static Builder New => new Builder();
-          
             public IMatrixBuilder Key(string key = "", int index = 0)
             {
                 _key = new MatrixKey(key, index);
@@ -402,11 +400,11 @@ namespace Xsheet
                 return this;
             }
 
-            public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
-            {
-                _rows.Add(MakeRowDefinition(key, defaultCellFormat));
-                return new RowBuilder(this);
-            }
+            //public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
+            //{
+            //    _rows.Add(MakeRowDefinition(key, defaultCellFormat));
+            //    return new RowBuilder(this);
+            //}
 
             private RowDefinition MakeRowDefinition(string key, IFormat defaultCellFormat)
             {
@@ -416,7 +414,27 @@ namespace Xsheet
                     DefaultCellFormat = defaultCellFormat
                 };
             }
-            
+
+            public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
+            {
+                _rows.Add(MakeRowDefinition(key, defaultCellFormat));
+                return this;
+            }
+
+            public IRowBuilder Format(string colName, IFormat format)
+            {
+                var rowDef = _rows.Last();
+                rowDef.FormatsByColName.Add(colName, format);
+                return this;
+            }
+
+            public IRowBuilder ValueMap(string colName, Func<Matrix, MatrixCellValue, object> func)
+            {
+                var rowDef = _rows.Last();
+                rowDef.ValuesMapping.Add(colName, func);
+                return this;
+            }
+
             public IMatrixBuilder RowValues(IEnumerable<RowValue> rowValues)
             {
                 _values = rowValues.ToList();
@@ -468,46 +486,6 @@ namespace Xsheet
                 }
 
                 return mat;
-            }
-
-            protected class RowBuilder : IRowBuilder
-            {
-                private readonly Builder _builder;
-
-                public RowBuilder(Builder builder)
-                {
-                    _builder = builder;
-                }
-
-                public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
-                {
-                    _builder._rows.Add(_builder.MakeRowDefinition(key, defaultCellFormat));
-                    return this;
-                }
-
-                public IRowBuilder Format(string colName, IFormat format)
-                {
-                    var rowDef = _builder._rows.Last();
-                    rowDef.FormatsByColName.Add(colName, format);
-                    return this;
-                }
-
-                public IRowBuilder ValueMap(string colName, Func<Matrix, MatrixCellValue, object> func)
-                {
-                    var rowDef = _builder._rows.Last();
-                    rowDef.ValuesMapping.Add(colName, func);
-                    return this;
-                }
-
-                public IMatrixBuilder RowValues(IEnumerable<RowValue> rowValues)
-                {
-                    return _builder.RowValues(rowValues);
-                }
-
-                public Matrix Build()
-                {
-                    return _builder.Build();
-                }
             }
         }
 

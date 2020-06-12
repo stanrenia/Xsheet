@@ -35,7 +35,7 @@ namespace Xsheet.Tests
             IFormat format4 = new BasicFormat { FontSize = 9 };
 
             // WHEN
-            var mat = Matrix.Builder.New
+            var mat = Matrix.With()
                 .Cols()
                     .Col(name: colA, label: "I'm A", dataType: DataTypes.Boolean, headerCellFormat: format1)
                     .Col(colB, "I'm B")
