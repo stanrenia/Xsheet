@@ -27,6 +27,7 @@ namespace Xsheet.Tests
         private const string FILE_TEST_CONCATX = "test_concatX";
         private const string FILE_TEST_LOOKUP_1 = "test_lookup1";
         private const string FILE_TEST_LOOKUP_2 = "test_lookup2";
+        private const string FILE_TEST_DATATYPES = "test_datatypes";
         private const string FILE_TEST_HEAVY_1 = "test_heavy1";
 
         public NPOIRendererTest()
@@ -568,6 +569,55 @@ namespace Xsheet.Tests
             Check.That(row3.Cells[9].CellFormula).IsEqualTo("J2+J3");
             Check.That(row3.Cells[10].CellFormula).IsEqualTo("SUM(K2:K3)");
             Check.That(row3.Cells[11].CellFormula).IsEqualTo("AVERAGE(L2:L3)");
+        }
+
+        [Fact]
+        public void Should_Render_Matrix_With_All_DataTypes()
+        {
+            // GIVEN
+            var mat = Matrix.With()
+                .Cols()
+                    .Col("Bool", dataType: DataTypes.Boolean)
+                    .Col("Datetime", dataType: DataTypes.Date)
+                    .Col("DatetimeOffset", dataType: DataTypes.Date)
+                    .Col("Int", dataType: DataTypes.Number)
+                    .Col("Decimal", dataType: DataTypes.Number)
+                    .Col("Float", dataType: DataTypes.Number)
+                    .Col("TextAlphaNumeric", dataType: DataTypes.Text)
+                    .Col("TextNumeric", dataType: DataTypes.Text)
+                .RowValues(new List<RowValue>
+                {
+                    new RowValue { ValuesByColName = new Dictionary<string, object>
+                    {
+                        { "Bool", false },
+                        { "Datetime", new DateTime(2020, 2, 1) },
+                        { "DatetimeOffset", new DateTimeOffset(new DateTime(2020, 2, 1), TimeSpan.FromHours(5)) },
+                        { "Int", 10 },
+                        { "Decimal", 10.123m },
+                        { "Float", 20.456f },
+                        { "TextAlphaNumeric", "ABCdef123" },
+                        { "TextNumeric", "123456" }
+                    }}
+                })
+                .Build();
+
+            var value = mat.RowValues.ElementAt(0);
+
+            // WHEN
+            var filename = WriteDebugFile(_defaultFormatApplier, mat, FILE_TEST_DATATYPES, _workbook);
+
+            // THEN
+            var readWb = new XSSFWorkbook(File.OpenRead(filename));
+            var row = readWb.GetSheetAt(0).GetRow(1);
+
+            Check.That(row.Cells[0].BooleanCellValue).IsFalse();
+            Check.That(row.Cells[1].DateCellValue).IsEqualTo(value.ValuesByColName["Datetime"]);
+            Check.That(row.Cells[2].DateCellValue).IsEqualTo(row.Cells[1].DateCellValue); // Only extract DateTime from DateTimeOffset so it equals DateTime
+            Check.That(row.Cells[3].NumericCellValue).IsEqualTo(value.ValuesByColName["Int"]);
+            Check.That(row.Cells[4].NumericCellValue).IsEqualTo(value.ValuesByColName["Decimal"]);
+            Check.That(row.Cells[5].NumericCellValue).IsEqualTo(value.ValuesByColName["Float"]);
+            Check.That(row.Cells[6].StringCellValue).IsEqualTo(value.ValuesByColName["TextAlphaNumeric"]);
+            Check.That(row.Cells[7].StringCellValue).IsEqualTo(value.ValuesByColName["TextNumeric"]);
         }
 
         private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)

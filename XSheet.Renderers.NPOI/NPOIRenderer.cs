@@ -67,7 +67,7 @@ namespace XSheet.Renderers.NPOI
             }
         }
 
-        private static void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, ICell npoiCell)
+        private void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, ICell npoiCell)
         {
             var value = matrixCell.Value;
             bool isFormula = false;
@@ -103,7 +103,13 @@ namespace XSheet.Renderers.NPOI
                         npoiCell.SetCellValue(Convert.ToBoolean(value));
                         break;
                     case DataTypes.Date:
-                        npoiCell.SetCellValue(Convert.ToDateTime(value));
+                        if (value is DateTime)
+                        {
+                            npoiCell.SetCellValue(Convert.ToDateTime(value));
+                        } else if (value is DateTimeOffset dateTimeOffset)
+                        {
+                            npoiCell.SetCellValue(dateTimeOffset.DateTime);
+                        }
                         break;
                     case DataTypes.Number:
                         npoiCell.SetCellValue(Convert.ToDouble(value));
