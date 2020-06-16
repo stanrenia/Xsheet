@@ -202,7 +202,7 @@ namespace Xsheet.Tests
 
             // All cells (skip headers)
             // -- FontSize is 12
-            Check.That(ReadAllCells(readWb, 0).Skip(cols.Count)).ContainsOnlyElementsThatMatch(cell => cell.CellStyle.GetFont(readWb).FontHeightInPoints == 12);
+            Check.That(TestUtils.ReadAllCells(readWb, 0).Skip(cols.Count)).ContainsOnlyElementsThatMatch(cell => cell.CellStyle.GetFont(readWb).FontHeightInPoints == 12);
         }
 
         [Fact]
@@ -244,17 +244,17 @@ namespace Xsheet.Tests
             style3.CloneStyleFrom(style2);
             style3.SetFont(Font3());
 
-            var ColorBlueIndex = IndexedColors.LightBlue.Index;
-            var ColorLightGreyIndex = IndexedColors.Grey25Percent.Index;
+            var ColorBlue = IndexedColors.LightBlue;
+            var ColorLightGrey = IndexedColors.Grey25Percent;
 
             var style4 = _workbook.CreateCellStyle();
             style4.CloneStyleFrom(style2);
             style4.FillPattern = FillPattern.SolidForeground;
-            style4.FillForegroundColor = ColorLightGreyIndex;
+            style4.FillForegroundColor = ColorLightGrey.Index;
 
             var style5 = _workbook.CreateCellStyle();
             style5.CloneStyleFrom(style4);
-            style5.FillForegroundColor = ColorBlueIndex;
+            style5.FillForegroundColor = ColorBlue.Index;
 
             var cols = new List<ColumnDefinition>
             {
@@ -325,44 +325,12 @@ namespace Xsheet.Tests
             WriteDebugFile(_defaultFormatApplier, mat, FILE_TEST_FORMAT_NPOI, _workbook);
 
             // THEN
-            var fileBytes = ms.ToArray();
-            Check.That(fileBytes).Not.IsEmpty();
-
-            var readWb = new XSSFWorkbook(new MemoryStream(fileBytes));
-            var readSheet = readWb.GetSheetAt(0);
-
-            // Headers
-            var headerRow = readSheet.GetRow(0);
-            // -- Firstname cell is Italic
-            Check.That(headerRow.Cells[1].CellStyle.GetFont(readWb).IsItalic).IsTrue();
-
-            // Row 1
-            var rowValue1 = readSheet.GetRow(1);
-            var lastnameFont1 = rowValue1.Cells[0].CellStyle.GetFont(readWb);
-            // -- Lastname is Bold
-            Check.That(lastnameFont1.IsBold).IsTrue();
-            // -- Age has BgColor=LightGrey
-            Check.That(rowValue1.Cells[2].CellStyle.FillForegroundColor).IsEqualTo(ColorLightGreyIndex);
-
-            // Row 2
-            var rowValue2 = readSheet.GetRow(2);
-            // -- Age has BgColor=Blue
-            Check.That(rowValue2.Cells[2].CellStyle.FillForegroundColor).IsEqualTo(ColorBlueIndex);
-            // -- Lastname is Bold
-            Check.That(rowValue2.Cells[0].CellStyle.GetFont(readWb).IsBold).IsTrue();
-            // -- Firstname is not Bold
-            Check.That(rowValue2.Cells[1].CellStyle.GetFont(readWb).IsBold).IsFalse();
-
-            // Row 3
-            var rowValue3 = readSheet.GetRow(3);
-            // -- Lastname is Bold
-            Check.That(rowValue3.Cells[0].CellStyle.GetFont(readWb).IsBold).IsTrue();
-            // -- Age has BgColor=LightGrey
-            Check.That(rowValue3.Cells[2].CellStyle.FillForegroundColor).IsEqualTo(ColorLightGreyIndex);
-
-            // All cells (skip headers)
-            // -- FontSize is 12
-            Check.That(ReadAllCells(readWb, 0).Skip(cols.Count)).ContainsOnlyElementsThatMatch(cell => cell.CellStyle.GetFont(readWb).FontHeightInPoints == 12);
+            SharedAssertions.Assert_Format_With_Specific_FormatApplier(ms, new FormatDataset
+            {
+                ColorBlue = ColorBlue.ToARGB(),
+                ColorLightGrey = ColorLightGrey.ToARGB(),
+                ColsCount = cols.Count
+            });
         }
 
         [Fact]
@@ -618,19 +586,6 @@ namespace Xsheet.Tests
             Check.That(row.Cells[5].NumericCellValue).IsEqualTo(value.ValuesByColName["Float"]);
             Check.That(row.Cells[6].StringCellValue).IsEqualTo(value.ValuesByColName["TextAlphaNumeric"]);
             Check.That(row.Cells[7].StringCellValue).IsEqualTo(value.ValuesByColName["TextNumeric"]);
-        }
-
-        private List<ICell> ReadAllCells(IWorkbook readWb, int sheetIndex)
-        {
-            var readSheet = readWb.GetSheetAt(sheetIndex);
-            return Enumerable.Range(readSheet.FirstRowNum, readSheet.LastRowNum)
-                .SelectMany(i =>
-                {
-                    var curRow = readSheet.GetRow(i);
-                    return Enumerable.Range(curRow.FirstCellNum, curRow.LastCellNum)
-                        .Select(j => curRow.GetCell(j));
-                })
-                .ToList();
         }
 
         private void WriteDebugFile(Matrix mat, string fileName)

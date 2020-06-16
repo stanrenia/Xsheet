@@ -56,12 +56,12 @@ namespace XSheet.Renderers.ClosedXml
                     var colDef = mat.GetOwnColumnByIndex(matrixCell.ColIndex);
                     var cell = row.Cell(1 + colDef.Index);
                     //_formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, cell);
-                    SetCellValue(mat, matrixCell, rowDef, colDef, cell);
+                    SetCellValue(mat, matrixCell, rowDef, cell);
                 }
             }
         }
 
-        private void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, ColumnDefinition colDef, IXLCell cell)
+        private void SetCellValue(Matrix mat, MatrixCellValue matrixCell, RowDefinition rowDef, IXLCell cell)
         {
             var value = matrixCell.Value;
             bool isFormula = false;
