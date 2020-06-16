@@ -3,9 +3,9 @@ using Xunit;
 
 namespace Xsheet.Tests
 {
-    public class CellAdressCalculatorTest
+    public class CellAddressCalculatorTest
     {
-        public CellAdressCalculatorTest()
+        public CellAddressCalculatorTest()
         {
 
         }
