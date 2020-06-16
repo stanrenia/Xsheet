@@ -53,5 +53,47 @@ namespace Xsheet.Tests.SharedDatasets
             Check.That(row3.Cells[4].CellFormula).IsEqualTo("SUM(E2:E3)");
             Check.That(row3.Cells[5].CellFormula).IsEqualTo("AVERAGE(F2:F3)");
         }
+
+        public static void Assert_Format_With_Specific_FormatApplier(MemoryStream ms, FormatDataset dataset)
+        {
+            var fileBytes = ms.ToArray();
+            Check.That(fileBytes).Not.IsEmpty();
+
+            var readWb = new XSSFWorkbook(new MemoryStream(fileBytes));
+            var readSheet = readWb.GetSheetAt(0);
+
+            // Headers
+            var headerRow = readSheet.GetRow(0);
+            // -- Firstname cell is Italic
+            Check.That(headerRow.Cells[1].CellStyle.GetFont(readWb).IsItalic).IsTrue();
+
+            // Row 1
+            var rowValue1 = readSheet.GetRow(1);
+            var lastnameFont1 = rowValue1.Cells[0].CellStyle.GetFont(readWb);
+            // -- Lastname is Bold
+            Check.That(lastnameFont1.IsBold).IsTrue();
+            // -- Age has BgColor=LightGrey
+            Check.That(rowValue1.Cells[2].CellStyle.FillForegroundColorColor.ToARGB()).IsEqualTo(dataset.ColorLightGrey);
+
+            // Row 2
+            var rowValue2 = readSheet.GetRow(2);
+            // -- Age has BgColor=Blue
+            Check.That(rowValue2.Cells[2].CellStyle.FillForegroundColorColor.ToARGB()).IsEqualTo(dataset.ColorBlue);
+            // -- Lastname is Bold
+            Check.That(rowValue2.Cells[0].CellStyle.GetFont(readWb).IsBold).IsTrue();
+            // -- Firstname is not Bold
+            Check.That(rowValue2.Cells[1].CellStyle.GetFont(readWb).IsBold).IsFalse();
+
+            // Row 3
+            var rowValue3 = readSheet.GetRow(3);
+            // -- Lastname is Bold
+            Check.That(rowValue3.Cells[0].CellStyle.GetFont(readWb).IsBold).IsTrue();
+            // -- Age has BgColor=LightGrey
+            Check.That(rowValue3.Cells[2].CellStyle.FillForegroundColorColor.ToARGB()).IsEqualTo(dataset.ColorLightGrey);
+
+            // All cells (skip headers)
+            // -- FontSize is 12
+            Check.That(TestUtils.ReadAllCells(readWb, 0).Skip(dataset.ColsCount)).ContainsOnlyElementsThatMatch(cell => cell.CellStyle.GetFont(readWb).FontHeightInPoints == 12);
+        }
     }
 }
