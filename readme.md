@@ -239,7 +239,7 @@ var mat = Matrix.With()
     .Build();
 
 var workbook = new XLWorkbook();
-var renderer = new ClosedXmlRenderer(_wb, new ClosedXmlFormatApplier());
+var renderer = new ClosedXmlRenderer(workbook, new ClosedXmlFormatApplier());
 using (var fs = File.Create("myReport_using_ClosedXml.xlsx"))
 _renderer.GenerateExcelFile(mat, fs);
 ```
