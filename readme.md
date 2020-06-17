@@ -173,3 +173,73 @@ var mat = Matrix.With()
     .RowValues(GetValues()) // GetValues is a method returning List<RowValue> from any business data
     .Build();
 ```
+
+Same report with ```ClosedXmlFormat```
+
+*Note: Used colors are not exactly the same*
+
+```csharp
+Func<IXLStyle, IXLStyle> style1 = (style) =>
+{
+    style.Font.Italic = true;
+    return style;
+};
+
+Func<IXLStyle, IXLStyle> style2 = (style) =>
+{
+    style.Font.FontSize = 12;
+    return style;
+};
+
+Func<IXLStyle, IXLStyle> style3Partial = (style) =>
+{
+    style.Font.Bold = true;
+    return style;
+};
+// Use Function Composition in order to inherit styles
+// Compose(...) is an Extension method
+// Here style3 will be based on style2 and then apply its own style e.g. font is Bold
+var style3 = style3Partial.Compose(style2);
+
+var ColorBlueIndex = XLColor.LightBlue;
+var ColorLightGreyIndex = XLColor.LightGray;
+
+Func<IXLStyle, IXLStyle> style4Partial = (style) =>
+{
+    style.Fill.BackgroundColor = ColorLightGreyIndex;
+    return style;
+};
+var style4 = style4Partial.Compose(style2);
+
+Func<IXLStyle, IXLStyle> style5Partial = (style) =>
+{
+    style.Fill.BackgroundColor = ColorBlueIndex;
+    return style;
+};
+var style5 = style5Partial.Compose(style4);
+
+const string Even = "EVEN";
+const string Odd = "ODD";
+const string Lastname = "Lastname";
+const string Firstname = "Firstname";
+const string Age = "Age";
+
+var mat = Matrix.With()
+    .Cols()
+        .Col(label: Lastname)
+        .Col(label: Firstname, headerCellFormat: new ClosedXmlFormat(style1))
+        .Col(label: Age, dataType: DataTypes.Number)
+    .Rows()
+        .Row(defaultCellFormat: new ClosedXmlFormat(style2))
+            .Format(Lastname, new ClosedXmlFormat(style3))
+            .Format(Age, new ClosedXmlFormat(style4))
+        .Row(key: Odd)
+            .Format(Age, new ClosedXmlFormat(style5))
+    .RowValues(GetValues())
+    .Build();
+
+var workbook = new XLWorkbook();
+var renderer = new ClosedXmlRenderer(_wb, new ClosedXmlFormatApplier());
+using (var fs = File.Create("myReport_using_ClosedXml.xlsx"))
+_renderer.GenerateExcelFile(mat, fs);
+```
