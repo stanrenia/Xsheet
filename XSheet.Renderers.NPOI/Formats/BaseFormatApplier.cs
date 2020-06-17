@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xsheet;
+using Xsheet.Formats;
 
 namespace XSheet.Renderers.NPOI.Formats
 {
@@ -10,31 +11,12 @@ namespace XSheet.Renderers.NPOI.Formats
         where T : class, IFormat
     {
         /// <summary>
-        /// Add the following Formats in order, then call MergeFormats()
-        /// 1) Add default format of default row 
-        /// 2) Add each Col format of default row
-        /// 3) Add default format of current row
-        /// 4) Add each Col format of current row
+        /// Get All Formats ordered by less prioritary for the given Cell, then call MergeFormats()
         /// Override MergeFormats() to change the default behavior, which is only taking the 4th format (the last one)
         /// </summary>
         public void ApplyFormatToCell(IWorkbook wb, RowDefinition defaultRowDef, RowDefinition rowDef, int columnIndex, ICell cell)
         {
-            var formats = new List<T>();
-            void AddFormatIfNotNull(IFormat f)
-            {
-                if (f != null && f is T nPOIFormat)
-                {
-                    formats.Add(nPOIFormat);
-                }
-            }
-
-            AddFormatIfNotNull(defaultRowDef.DefaultCellFormat);
-            defaultRowDef.FormatsByColIndex.TryGetValue(columnIndex, out IFormat defaultColFormat);
-            AddFormatIfNotNull(defaultColFormat);
-            AddFormatIfNotNull(rowDef.DefaultCellFormat);
-            rowDef.FormatsByColIndex.TryGetValue(columnIndex, out IFormat colFormat);
-            AddFormatIfNotNull(colFormat);
-
+            List<T> formats = FormatMerger.GetFormatsOrderedByLessPrioritary<T>(defaultRowDef, rowDef, columnIndex);
             var mergedFormat = MergeFormats(formats);
 
             if (mergedFormat != null)

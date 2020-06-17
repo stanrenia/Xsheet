@@ -1,16 +1,12 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Math;
-using NFluent;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using Xsheet.Extensions;
 using Xsheet.Tests.SharedDatasets;
 using XSheet.Renderers.ClosedXml;
 using Xunit;
-using Xsheet.Extensions;
-using NPOI.XSSF.UserModel;
 
 namespace Xsheet.Tests
 {
@@ -26,8 +22,8 @@ namespace Xsheet.Tests
         public ClosedXmlRendererTest()
         {
             _wb = new XLWorkbook();
-            _renderer = new ClosedXmlRenderer(_wb, null);
             _defaultFormatApplier = new ClosedXmlFormatApplier();
+            _renderer = new ClosedXmlRenderer(_wb, _defaultFormatApplier);
             _fileStreamToClose = new List<Stream>();
         }
 
@@ -103,45 +99,20 @@ namespace Xsheet.Tests
 
             Func<IXLStyle, IXLStyle> style4Partial = (style) =>
             {
-                style.Fill.PatternType = XLFillPatternValues.Solid;
-                style.Fill.PatternColor = ColorLightGreyIndex;
+                style.Fill.BackgroundColor = ColorLightGreyIndex;
                 return style;
             };
             var style4 = style4Partial.Compose(style2);
 
             Func<IXLStyle, IXLStyle> style5Partial = (style) =>
             {
-                style.Fill.PatternColor = ColorBlueIndex;
+                style.Fill.BackgroundColor = ColorBlueIndex;
                 return style;
             };
             var style5 = style5Partial.Compose(style4);
 
-            var cols = new List<ColumnDefinition>
-            {
-                new ColumnDefinition { Label = Lastname, DataType = DataTypes.Text },
-                new ColumnDefinition { Label = Firstname, DataType = DataTypes.Text, HeaderCellFormat = new ClosedXmlFormat { Stylize = style1 } },
-                new ColumnDefinition { Label = Age, DataType = DataTypes.Number },
-            };
-
             const string Even = "EVEN";
             const string Odd = "ODD";
-
-            var rows = new List<RowDefinition>
-            {
-                new RowDefinition {
-                    DefaultCellFormat = new ClosedXmlFormat { Stylize = style2 },
-                    FormatsByColName = new Dictionary<string, IFormat> {
-                        { Lastname, new ClosedXmlFormat { Stylize = style3 } },
-                        { Age, new ClosedXmlFormat { Stylize = style4 } }
-                    }
-                },
-                new RowDefinition {
-                    Key = Odd,
-                    FormatsByColName = new Dictionary<string, IFormat> {
-                        { Age, new ClosedXmlFormat { Stylize = style5 } }
-                    }
-                },
-            };
 
             var values = new List<RowValue> {
                 new RowValue {
@@ -171,23 +142,33 @@ namespace Xsheet.Tests
             };
 
             var mat = Matrix.With()
-                .Cols(cols)
-                .Rows(rows)
+                .Cols()
+                    .Col(label: Lastname)
+                    .Col(label: Firstname, headerCellFormat: new ClosedXmlFormat(style1))
+                    .Col(label: Age, dataType: DataTypes.Number)
+                .Rows()
+                    .Row(defaultCellFormat: new ClosedXmlFormat(style2))
+                        .Format(Lastname, new ClosedXmlFormat(style3))
+                        .Format(Age, new ClosedXmlFormat(style4))
+                    .Row(key: Odd)
+                        .Format(Age, new ClosedXmlFormat(style5))
                 .RowValues(values)
                 .Build();
 
             var ms = new MemoryStream();
 
             // WHEN
-            TestUtils.WriteDebugFile(mat, "closedxml_format", _wb, _fileStreamToClose, _defaultFormatApplier);
+            _renderer.GenerateExcelFile(mat, ms);
+
+            TestUtils.WriteDebugFile(mat, "closedxml_format", streamsToClose: _fileStreamToClose, formatApplier: _defaultFormatApplier);
 
             // THEN
             SharedAssertions.Assert_Format_With_Specific_FormatApplier(ms, new FormatDataset
             {
                 ColorBlue = ColorBlueIndex.Color.ToARGB(),
                 ColorLightGrey = ColorLightGreyIndex.Color.ToARGB(),
-                ColsCount = cols.Count
-            }); ;
+                ColsCount = mat.ColumnsDefinitions.Count()
+            });
         }
     }
 }

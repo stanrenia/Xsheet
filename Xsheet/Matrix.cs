@@ -400,11 +400,11 @@ namespace Xsheet
                 return this;
             }
 
-            //public IRowBuilder Row(string key = null, IFormat defaultCellFormat = null)
-            //{
-            //    _rows.Add(MakeRowDefinition(key, defaultCellFormat));
-            //    return new RowBuilder(this);
-            //}
+            IRowsBuilder IColsBuilder.Rows(List<RowDefinition> rows)
+            {
+                _rows = rows;
+                return this;
+            }
 
             private RowDefinition MakeRowDefinition(string key, IFormat defaultCellFormat)
             {

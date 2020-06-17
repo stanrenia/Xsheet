@@ -36,7 +36,7 @@ namespace XSheet.Renderers.ClosedXml
                 mat.ColumnsDefinitions.Select((colDef, colNum) =>
                 {
                     var cell = headers.Cell(1 + colDef.Index);
-                    //_formatApplier.ApplyFormatToCell(wb, cell, colDef.HeaderCellFormat);
+                    _formatApplier.ApplyFormatToCell(wb, cell, colDef.HeaderCellFormat);
                     cell.Value = colDef.Label;
                     return cell;
                 }).ToArray();
@@ -55,7 +55,7 @@ namespace XSheet.Renderers.ClosedXml
                 {
                     var colDef = mat.GetOwnColumnByIndex(matrixCell.ColIndex);
                     var cell = row.Cell(1 + colDef.Index);
-                    //_formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, cell);
+                    _formatApplier.ApplyFormatToCell(wb, defaultRowDef, rowDef, colDef.Index, cell);
                     SetCellValue(mat, matrixCell, rowDef, cell);
                 }
             }

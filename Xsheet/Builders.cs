@@ -28,6 +28,7 @@ namespace Xsheet
     {
         IColsBuilder Col(string name = null, string label = null, DataTypes dataType = DataTypes.Text, IFormat headerCellFormat = null);
         IRowsBuilder Rows();
+        IRowsBuilder Rows(List<RowDefinition> rows);
     }
 
     public interface IRowsBuilder : IRowValuesBuilder
