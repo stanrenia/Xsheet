@@ -254,6 +254,9 @@ namespace Xsheet.Tests
 
             const string Even = "EVEN";
             const string Odd = "ODD";
+            const string Lastname = "Lastname";
+            const string Firstname = "Firstname";
+            const string Age = "Age";
 
             var values = new List<RowValue> {
                 new RowValue {
@@ -281,10 +284,6 @@ namespace Xsheet.Tests
                     }
                 }
             };
-
-            const string Lastname = "Lastname";
-            const string Firstname = "Firstname";
-            const string Age = "Age";
 
             var mat = Matrix.With()
                 .Cols()

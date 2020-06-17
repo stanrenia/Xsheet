@@ -136,7 +136,7 @@ namespace Xsheet
         // TODO What to do if rows defs contains same Key ?
         // -- May allow to define the behaviour like: 
         // -- Keep left/right, merge, raiseError
-        public Matrix ConcatX(Matrix aMat, MatrixConcatStrategy rowsStrategy = MatrixConcatStrategy.KeepLeft)
+        public Matrix ConcatX(Matrix aMat, MatrixConcatStrategy rowsStrategy = MatrixConcatStrategy.KeepCurrent)
         {
             if (Key.Equals(aMat.Key))
             {
@@ -190,9 +190,9 @@ namespace Xsheet
                 throw new InvalidOperationException($@"Cannot ConcatX using strategy {nameof(MatrixConcatStrategy.RaiseError)}:
                 Some RowDefinitions have the same Key.");
             }
-            else if (rowsStrategy == MatrixConcatStrategy.KeepRight)
+            else if (rowsStrategy == MatrixConcatStrategy.KeepOther)
             {
-                throw new NotImplementedException("KeepRight is not supported yet");
+                throw new NotImplementedException("KeepOther is not supported yet");
             }
             else if (rowsStrategy == MatrixConcatStrategy.Merge)
             {
@@ -206,7 +206,7 @@ namespace Xsheet
                 return row;
             });
 
-            if (rowsStrategy == MatrixConcatStrategy.KeepLeft)
+            if (rowsStrategy == MatrixConcatStrategy.KeepCurrent)
             {
                 var rowDefstoAdd = new List<RowDefinition>();
                 foreach (var rightRowDef in rightMatRowDefs)
@@ -301,12 +301,28 @@ namespace Xsheet
             return values.ToList();
         }
 
-        public Matrix ConcatY(Matrix aMat)
+        public Matrix ConcatY(Matrix aMat, MatrixConcatStrategy rowsStrategy = MatrixConcatStrategy.KeepCurrent)
         {
             if (Key.Equals(aMat.Key))
             {
                 throw new InvalidOperationException($"Cannot concat Matricies with the same Key {Key}");
             }
+
+            if (rowsStrategy != MatrixConcatStrategy.KeepCurrent)
+            {
+                throw new NotImplementedException($"{Enum.GetName(typeof(MatrixConcatStrategy), rowsStrategy)} is not supported yet.");
+            }
+
+            var colDefs = this.ColumnsDefinitions.Concat(aMat.ColumnsDefinitions
+                .Where(bottomColDef => this.ColumnsDefinitions.All(colDef => !colDef.Key.Equals(bottomColDef.Key)))
+            );
+
+            var rowDefs = this.RowsDefinitions.Concat(aMat.RowsDefinitions
+                .Where(bottomRowDef => this.RowsDefinitions.All(rowDef => rowDef.Key != bottomRowDef.Key))
+            );
+
+            // TODO
+            //var values = ...
 
             return Matrix.With()
                 .Dimensions(Math.Max(this.CountOfColumns, aMat.CountOfColumns), this.CountOfRows + aMat.CountOfRows)

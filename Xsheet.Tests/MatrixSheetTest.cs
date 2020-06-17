@@ -267,5 +267,52 @@ namespace Xsheet.Tests
             // THEN
             Check.ThatCode(action).Throws<InvalidOperationException>();
         }
+
+        [Fact]
+        public void Should_Add_Width_And_Keep_Height_When_Concat_Vertically_With_Values()
+        {
+            // GIVEN
+            var values1 = Enumerable.Range(1, 2)
+                .Select(line => new RowValue
+                {
+                    ValuesByColName = Enumerable.Range(1, 4)
+                        .Select(col => new { Col = $"ACol{col}", Value = $"A{line}{col}" })
+                        .ToDictionary(o => o.Col, o => (object)o.Value)
+                })
+                .ToList();
+
+            var values2 = Enumerable.Range(1, 2)
+                .Select(line => new RowValue
+                {
+                    ValuesByColName = Enumerable.Range(1, 3)
+                        .Select(col => new { Col = $"BCol{col}", Value = $"B{line}{col}" })
+                        .ToDictionary(o => o.Col, o => (object)o.Value)
+                })
+                .ToList();
+
+            var m1 = Matrix.With().Key(index: 1)
+                .RowValues(values1)
+                .Build();
+
+            var m2 = Matrix.With().Key(index: 2)
+                .RowValues(values2)
+                .Build();
+
+            // WHEN
+            var m3 = m1.ConcatY(m2);
+
+            // THEN
+            Check.That(m3.CountOfRows).Equals(4);
+            Check.That(m3.CountOfColumns).Equals(4);
+            var valuesM3 = m3.RowValues.ToList();
+            Check.That(valuesM3[0].ValuesByColIndex.Keys.OrderBy(i => i)).ContainsExactly(0, 1, 2, 3);
+            Check.That(valuesM3[0].ValuesByColIndex.Values).Contains("A11", "A12", "A13", "A14");
+            Check.That(valuesM3[1].ValuesByColIndex.Keys.OrderBy(i => i)).ContainsExactly(0, 1, 2, 3);
+            Check.That(valuesM3[1].ValuesByColIndex.Values).Contains("A21", "A22", "A23", "A24");
+            Check.That(valuesM3[2].ValuesByColIndex.Keys.OrderBy(i => i)).ContainsExactly(0, 1, 2, 3);
+            Check.That(valuesM3[2].ValuesByColIndex.Values).Contains("B11", "B12", "B13", null);
+            Check.That(valuesM3[3].ValuesByColIndex.Keys.OrderBy(i => i)).ContainsExactly(0, 1, 2, 3);
+            Check.That(valuesM3[3].ValuesByColIndex.Values).Contains("B21", "B22", "B23", null);
+        }
     }
 }

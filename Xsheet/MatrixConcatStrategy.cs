@@ -3,8 +3,8 @@
     public enum MatrixConcatStrategy
     {
         Merge,
-        KeepLeft,
-        KeepRight,
+        KeepCurrent,
+        KeepOther,
         RaiseError
     }
 }
