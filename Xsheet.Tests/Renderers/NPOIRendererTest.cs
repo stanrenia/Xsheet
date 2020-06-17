@@ -209,10 +209,6 @@ namespace Xsheet.Tests
         public void Should_Renderer_Matrix_With_NPOIFormat()
         {
             // GIVEN
-            const string Lastname = "Lastname";
-            const string Firstname = "Firstname";
-            const string Age = "Age";
-
             IFont Font1()
             {
                 var f = _workbook.CreateFont();
@@ -256,32 +252,8 @@ namespace Xsheet.Tests
             style5.CloneStyleFrom(style4);
             style5.FillForegroundColor = ColorBlue.Index;
 
-            var cols = new List<ColumnDefinition>
-            {
-                new ColumnDefinition { Label = Lastname, DataType = DataTypes.Text },
-                new ColumnDefinition { Label = Firstname, DataType = DataTypes.Text, HeaderCellFormat = new NPOIFormat { CellStyle = style1 } },
-                new ColumnDefinition { Label = Age, DataType = DataTypes.Number },
-            };
-
             const string Even = "EVEN";
             const string Odd = "ODD";
-
-            var rows = new List<RowDefinition>
-            {
-                new RowDefinition {
-                    DefaultCellFormat = new NPOIFormat { CellStyle = style2 },
-                    FormatsByColName = new Dictionary<string, IFormat> {
-                        { Lastname, new NPOIFormat { CellStyle = style3 } },
-                        { Age, new NPOIFormat { CellStyle = style4 } }
-                    }
-                },
-                new RowDefinition {
-                    Key = Odd,
-                    FormatsByColName = new Dictionary<string, IFormat> {
-                        { Age, new NPOIFormat { CellStyle = style5 } }
-                    }
-                },
-            };
 
             var values = new List<RowValue> {
                 new RowValue {
@@ -310,9 +282,21 @@ namespace Xsheet.Tests
                 }
             };
 
+            const string Lastname = "Lastname";
+            const string Firstname = "Firstname";
+            const string Age = "Age";
+
             var mat = Matrix.With()
-                .Cols(cols)
-                .Rows(rows)
+                .Cols()
+                    .Col(label: Lastname)
+                    .Col(label: Firstname, headerCellFormat: new NPOIFormat(style1))
+                    .Col(label: Age, dataType: DataTypes.Number)
+                .Rows()
+                    .Row(defaultCellFormat: new NPOIFormat(style2))
+                        .Format(Lastname, new NPOIFormat(style3))
+                        .Format(Age, new NPOIFormat(style4))
+                    .Row(key: Odd)
+                        .Format(Age, new NPOIFormat(style5))
                 .RowValues(values)
                 .Build();
 
@@ -329,7 +313,7 @@ namespace Xsheet.Tests
             {
                 ColorBlue = ColorBlue.ToARGB(),
                 ColorLightGrey = ColorLightGrey.ToARGB(),
-                ColsCount = cols.Count
+                ColsCount = mat.ColumnsDefinitions.Count()
             });
         }
 

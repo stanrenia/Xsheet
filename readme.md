@@ -1,7 +1,7 @@
 # Xsheet - High level C# API to build Excel report easily
 **Compatible with :**
 - NPOI
-- ClosedXML (WorkInProgress: formatting / styles)
+- ClosedXML
 - OpenXML (only values are supported)
   - OpenXML is too verbose to be implemented quickly, ClosedXML is the preferred approach for the moment.
 
@@ -150,35 +150,26 @@ var style5 = _workbook.CreateCellStyle();
 style5.CloneStyleFrom(style4);
 style5.FillForegroundColor = ColorBlueIndex;
 
-// Set formats to your rows and columns definitions
-
-var cols = new List<ColumnDefinition>
-{
-    new ColumnDefinition { Label = Lastname, DataType = DataTypes.Text },
-    new ColumnDefinition { Label = Firstname, DataType = DataTypes.Text, HeaderCellFormat = new NPOIFormat { CellStyle = style1 } },
-    new ColumnDefinition { Label = Age, DataType = DataTypes.Number },
-};
-
+// Values will be either Even or Odd based on the Age
 const string Even = "EVEN";
 const string Odd = "ODD";
+const string Lastname = "Lastname";
+const string Firstname = "Firstname";
+const string Age = "Age";
 
-var rows = new List<RowDefinition>
-{
-    new RowDefinition {
-        DefaultCellFormat = new NPOIFormat { CellStyle = style2 },
-        // Define a Format per Column for a given RowDefinition
-        // It will override the default cell format
-        FormatsByColName = new Dictionary<string, IFormat> {
-            { Lastname, new NPOIFormat { CellStyle = style3 } },
-            { Age, new NPOIFormat { CellStyle = style4 } }
-        }
-    },
-    new RowDefinition {
-        Key = Odd,
-        FormatsByColName = new Dictionary<string, IFormat> {
-            { Age, new NPOIFormat { CellStyle = style5 } }
-        }
-    },
-};
-}
+// Set formats to your columns and rows definitions
+
+var mat = Matrix.With()
+    .Cols()
+        .Col(label: Lastname)
+        .Col(label: Firstname, headerCellFormat: new NPOIFormat(style1))
+        .Col(label: Age, dataType: DataTypes.Number)
+    .Rows()
+        .Row(defaultCellFormat: new NPOIFormat(style2))
+            .Format(Lastname, new NPOIFormat(style3))
+            .Format(Age, new NPOIFormat(style4))
+        .Row(key: Odd)
+            .Format(Age, new NPOIFormat(style5))
+    .RowValues(GetValues()) // GetValues is a method returning List<RowValue> from any business data
+    .Build();
 ```
