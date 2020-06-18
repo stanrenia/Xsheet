@@ -7,6 +7,7 @@ namespace Xsheet
 {
     public class Matrix
     {
+        private const string HEADER_KEY = "HEADER";
         private IEnumerable<ColumnDefinition> _columnsDefinitions = new List<ColumnDefinition>();
         private Dictionary<int, ColumnDefinition> _columnsDefinitionsByIndex = new Dictionary<int, ColumnDefinition>();
         private Dictionary<ColumnKey, ColumnDefinition> _columnsDefinitionsByKey = new Dictionary<ColumnKey, ColumnDefinition>();
@@ -237,7 +238,7 @@ namespace Xsheet
 
         public ColumnCellReader Col(MatrixCellValue cell)
         {
-            return new ColumnCellReader(RowValues.SelectMany(rv => rv.Cells.Where(c => c.ColIndex == cell.ColIndex)));
+            return new ColumnCellReader(RowValues.SelectMany(rv => rv.Cells.Where(c => c.ColIndex == cell.ColIndex && c.MatrixKey.Equals(cell.MatrixKey))));
         }
 
         public RowCellReader Row(MatrixCellValue cell, int rowIndex = -1)
@@ -314,6 +315,11 @@ namespace Xsheet
                 throw new NotImplementedException($"{Enum.GetName(typeof(MatrixConcatStrategy), rowsStrategy)} is not supported yet.");
             }
 
+            if (this.ColumnsDefinitions.Any(colDef => aMat.ColumnsDefinitions.Any(aColDef => aColDef.Index == colDef.Index && aColDef.Name != colDef.Name)))
+            {
+                throw new InvalidOperationException("Cannot concat: ColumnDefinitions must have the same Name for the same Index.");
+            }
+
             var cols = this.ColumnsDefinitions.Concat(aMat.ColumnsDefinitions
                 .Where(bottomColDef => this.ColumnsDefinitions.All(colDef => colDef.Index != bottomColDef.Index && colDef.Name != bottomColDef.Name))
             ).ToList();
@@ -322,10 +328,25 @@ namespace Xsheet
                 .Where(bottomRowDef => this.RowsDefinitions.All(rowDef => rowDef.Key != bottomRowDef.Key))
             ).ToList();
 
-            var values = this.RowValues.Concat(aMat.RowValues.Select(rv =>
+            var aMatHeaderRow = new List<RowValue>();
+            if (aMat.HasHeaders)
+            {
+                var headerKeyCount = rows.Count(r => r.Key == HEADER_KEY);
+                var nextHeaderKey = $"{HEADER_KEY}{++headerKeyCount}";
+                
+                rows.Add(new RowDefinition
+                {
+                    Key = nextHeaderKey,
+                    FormatsByColName = aMat.ColumnsDefinitions.ToDictionary(c => c.Name, c => c.HeaderCellFormat)
+                });
+                aMatHeaderRow.Add(new RowValue { Key = nextHeaderKey, ValuesByColName = aMat.ColumnsDefinitions.ToDictionary(c => c.Name, c => c.Label as object) });
+            }
+
+            var values = this.RowValues.Concat(aMatHeaderRow).Concat(aMat.RowValues.Select(rv =>
             {
                 return new RowValue { Key = rv.Key, ValuesByColName = rv.ValuesByColName };
             })).ToList();
+            
 
             var builder = Matrix.With()
                 .Dimensions(this.CountOfRows + aMat.CountOfRows, Math.Max(this.CountOfColumns, aMat.CountOfColumns));
