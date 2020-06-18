@@ -304,6 +304,7 @@ namespace Xsheet.Tests
             // THEN
             Check.That(m3.CountOfRows).Equals(4);
             Check.That(m3.CountOfColumns).Equals(4);
+            Check.That(m3.InnerMatrices).HasSize(2);
             var valuesM3 = m3.RowValues.ToList();
             Check.That(valuesM3[0].ValuesByColIndex.Keys.OrderBy(i => i)).ContainsExactly(0, 1, 2, 3);
             Check.That(valuesM3[0].ValuesByColIndex.Values).Contains("A11", "A12", "A13", "A14");

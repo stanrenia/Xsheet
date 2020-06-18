@@ -128,6 +128,7 @@ namespace Xsheet
 
         public bool HasHeaders { get => WithHeadersRow && ColumnsDefinitions.Count() > 0; }
         public bool WithHeadersRow { get; private set; }
+        public List<Matrix> InnerMatrices { get; internal set; }
 
         private Matrix() { }
 
@@ -313,20 +314,36 @@ namespace Xsheet
                 throw new NotImplementedException($"{Enum.GetName(typeof(MatrixConcatStrategy), rowsStrategy)} is not supported yet.");
             }
 
-            var colDefs = this.ColumnsDefinitions.Concat(aMat.ColumnsDefinitions
-                .Where(bottomColDef => this.ColumnsDefinitions.All(colDef => !colDef.Key.Equals(bottomColDef.Key)))
-            );
+            var cols = this.ColumnsDefinitions.Concat(aMat.ColumnsDefinitions
+                .Where(bottomColDef => this.ColumnsDefinitions.All(colDef => colDef.Index != bottomColDef.Index && colDef.Name != bottomColDef.Name))
+            ).ToList();
 
-            var rowDefs = this.RowsDefinitions.Concat(aMat.RowsDefinitions
+            var rows = this.RowsDefinitions.Concat(aMat.RowsDefinitions
                 .Where(bottomRowDef => this.RowsDefinitions.All(rowDef => rowDef.Key != bottomRowDef.Key))
-            );
+            ).ToList();
 
-            // TODO
-            //var values = ...
+            var values = this.RowValues.Concat(aMat.RowValues.Select(rv =>
+            {
+                return new RowValue { Key = rv.Key, ValuesByColName = rv.ValuesByColName };
+            })).ToList();
 
-            return Matrix.With()
-                .Dimensions(Math.Max(this.CountOfColumns, aMat.CountOfColumns), this.CountOfRows + aMat.CountOfRows)
-                .Build();
+            var builder = Matrix.With()
+                .Dimensions(this.CountOfRows + aMat.CountOfRows, Math.Max(this.CountOfColumns, aMat.CountOfColumns));
+
+            if (cols.Count() > 0)
+            {
+                builder.Cols(cols);
+            }
+            if (rows.Count() > 0)
+            {
+                builder.Rows(rows);
+            }
+            if (values.Count() > 0)
+            {
+                builder.RowValues(values);
+            }
+
+            return builder.Build();
         }
 
         public ColumnDefinition GetOwnColumnByIndex(int index)
